@@ -11,5 +11,7 @@ std::size_t simple_instruction(const std::string_view name,
                                const std::size_t offset);
 std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
                                  std::size_t offset);
+std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
+                                      std::size_t offset);
 void print_value(Value value);
 int lookup_line(const Chunk &chunk, std::size_t offset);

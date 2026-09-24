@@ -1,4 +1,6 @@
 #include "debug.hpp"
+#include "chunk.hpp"
+#include <cstddef>
 #include <print>
 
 void disassemble_chunk(Chunk &chunk, const std::string_view name) {
@@ -24,6 +26,8 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
   switch (instruction) {
   case OP_CONSTANT:
     return constant_instruction("OP_CONSTANT", chunk, offset);
+  case OP_CONSTANT_LONG:
+    return constant_long_instruction("OP_CONSTANT_LONG", chunk, offset);
   case OP_RETURN:
     return simple_instruction("OP_RETURN", offset);
   default:
@@ -46,6 +50,22 @@ std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
   print_value(chunk.constants.values[constant]);
   std::println();
   return offset + 2;
+}
+
+std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
+                                      std::size_t offset) {
+
+  auto first_byte{chunk.code[offset + 1]};
+  auto second_byte{chunk.code[offset + 2]};
+  auto third_byte{chunk.code[offset + 3]};
+
+  // big-endian format
+  auto constant{(first_byte << 16) + (second_byte << 8) + third_byte};
+
+  std::print("{:16} {:4} '", name, constant);
+  print_value(chunk.constants.values[constant]);
+  std::println();
+  return offset + 4;
 }
 
 void print_value(Value value) { std::print("{}", value); }

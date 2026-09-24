@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 
-enum OpCode : std::uint8_t { OP_RETURN, OP_CONSTANT };
+enum OpCode : std::uint8_t { OP_RETURN, OP_CONSTANT, OP_CONSTANT_LONG };
 
 struct LineRun {
   int line;
@@ -18,4 +18,5 @@ struct Chunk {
 };
 
 void write_chunk(Chunk &chunk, std::uint8_t byte, int line);
-std::size_t add_constant(Chunk &chunk, Value value);
+void write_constant(Chunk &chunk, Value value, int line);
+int add_constant(Chunk &chunk, Value value);
