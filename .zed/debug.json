@@ -1,0 +1,9 @@
+[
+  {
+    "label": "Debug efkenlang",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/build/efkenlang",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]

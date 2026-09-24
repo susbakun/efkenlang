@@ -1,0 +1,66 @@
+#include "debug.hpp"
+#include <print>
+
+void disassemble_chunk(Chunk &chunk, const std::string_view name) {
+  std::println("== {} ==", name);
+
+  for (std::size_t offset{}; offset < chunk.code.size();) {
+    offset = disassemble_instruction(chunk, offset);
+  }
+}
+
+int disassemble_instruction(Chunk &chunk, std::size_t offset) {
+  std::print("{:04} ", offset);
+
+  if (offset > 0 &&
+      lookup_line(chunk, offset) == lookup_line(chunk, offset - 1)) {
+    std::print("   | ");
+  } else {
+    std::print("{:4} ", lookup_line(chunk, offset));
+  }
+
+  auto instruction{chunk.code[offset]};
+
+  switch (instruction) {
+  case OP_CONSTANT:
+    return constant_instruction("OP_CONSTANT", chunk, offset);
+  case OP_RETURN:
+    return simple_instruction("OP_RETURN", offset);
+  default:
+    std::println("Unknown opcode {}", instruction);
+    return offset + 1;
+  }
+}
+
+std::size_t simple_instruction(const std::string_view name,
+                               const std::size_t offset) {
+  std::println("{}", name);
+  return offset + 1;
+}
+
+std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
+                                 std::size_t offset) {
+  auto constant{chunk.code[offset + 1]};
+
+  std::print("{:16} {:4} '", name, constant);
+  print_value(chunk.constants.values[constant]);
+  std::println();
+  return offset + 2;
+}
+
+void print_value(Value value) { std::print("{}", value); }
+
+int lookup_line(const Chunk &chunk, std::size_t offset) {
+  std::size_t ind{0};
+
+  while (ind < chunk.lines.size()) {
+    auto &line_run{chunk.lines[ind]};
+    if (offset < line_run.count) {
+      return line_run.line;
+    } else {
+      offset -= line_run.count;
+    }
+  }
+
+  return -1;
+}
