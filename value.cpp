@@ -1,3 +1,4 @@
 #include "value.hpp"
+#include <cstddef>
 
-void write_value(ValueArray &va, Value value) { va.values.push_back(value); }
+void ValueArray::write_value(Value value) { m_values.push_back(value); }

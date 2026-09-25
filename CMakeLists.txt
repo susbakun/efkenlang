@@ -12,4 +12,5 @@ add_executable(${PROJECT_NAME}
     chunk.cpp
     value.cpp
     debug.cpp
+    vm.cpp
 )

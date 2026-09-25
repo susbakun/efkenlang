@@ -11,12 +11,28 @@ struct LineRun {
   int count;
 };
 
-struct Chunk {
-  std::vector<std::uint8_t> code{};
-  std::vector<LineRun> lines{};
-  ValueArray constants{};
-};
+class Chunk {
+public:
+  Chunk() = default;
 
-void write_chunk(Chunk &chunk, std::uint8_t byte, int line);
-void write_constant(Chunk &chunk, Value value, int line);
-int add_constant(Chunk &chunk, Value value);
+  void write_chunk(std::uint8_t byte, int line);
+  void write_constant(Value value, int line);
+  int add_constant(Value value);
+
+  std::uint8_t get_code(const std::size_t offset) const;
+  Value get_constant(const std::size_t offset) const;
+  LineRun get_lines(const std::size_t offset) const;
+
+  std::uint8_t &get_code_ref(const std::size_t offset);
+  Value &get_constant_ref(const std::size_t offset);
+  LineRun &get_lines_ref(const std::size_t offset);
+
+  std::size_t code_size() const;
+  std::size_t constants_size() const;
+  std::size_t lines_size() const;
+
+private:
+  std::vector<std::uint8_t> m_code{};
+  std::vector<LineRun> m_lines{};
+  ValueArray m_constants{};
+};

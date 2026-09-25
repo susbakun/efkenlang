@@ -6,7 +6,7 @@
 void disassemble_chunk(Chunk &chunk, const std::string_view name) {
   std::println("== {} ==", name);
 
-  for (std::size_t offset{}; offset < chunk.code.size();) {
+  for (std::size_t offset{}; offset < chunk.code_size();) {
     offset = disassemble_instruction(chunk, offset);
   }
 }
@@ -21,7 +21,7 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
     std::print("{:4} ", lookup_line(chunk, offset));
   }
 
-  auto instruction{chunk.code[offset]};
+  auto instruction{chunk.get_code(offset)};
 
   switch (instruction) {
   case OP_CONSTANT:
@@ -44,10 +44,10 @@ std::size_t simple_instruction(const std::string_view name,
 
 std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
                                  std::size_t offset) {
-  auto constant{chunk.code[offset + 1]};
+  auto constant{chunk.get_code(offset + 1)};
 
   std::print("{:16} {:4} '", name, constant);
-  print_value(chunk.constants.values[constant]);
+  print_value(chunk.get_constant(constant));
   std::println();
   return offset + 2;
 }
@@ -55,15 +55,15 @@ std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
 std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
                                       std::size_t offset) {
 
-  auto first_byte{chunk.code[offset + 1]};
-  auto second_byte{chunk.code[offset + 2]};
-  auto third_byte{chunk.code[offset + 3]};
+  auto first_byte{chunk.get_code(offset + 1)};
+  auto second_byte{chunk.get_code(offset + 2)};
+  auto third_byte{chunk.get_code(offset + 3)};
 
   // big-endian format
   auto constant{(first_byte << 16) + (second_byte << 8) + third_byte};
 
   std::print("{:16} {:4} '", name, constant);
-  print_value(chunk.constants.values[constant]);
+  print_value(chunk.get_constant(constant));
   std::println();
   return offset + 4;
 }
@@ -73,8 +73,8 @@ void print_value(Value value) { std::print("{}", value); }
 int lookup_line(const Chunk &chunk, std::size_t offset) {
   std::size_t ind{0};
 
-  while (ind < chunk.lines.size()) {
-    auto &line_run{chunk.lines[ind]};
+  while (ind < chunk.lines_size()) {
+    auto line_run{chunk.get_lines(ind)};
     if (offset < line_run.count) {
       return line_run.line;
     } else {

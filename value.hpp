@@ -3,8 +3,11 @@
 #include <vector>
 using Value = double;
 
-struct ValueArray {
-  std::vector<Value> values{};
-};
+class ValueArray {
+public:
+  ValueArray() = default;
 
-void write_value(ValueArray &va, Value value);
+  void write_value(Value value);
+
+  std::vector<Value> m_values{};
+};

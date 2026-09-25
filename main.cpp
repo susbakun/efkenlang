@@ -1,17 +1,18 @@
 #include "chunk.hpp"
 #include "debug.hpp"
+#include "vm.hpp"
 #include <cstddef>
 
 int main() {
   Chunk chunk{};
 
-  for (std::size_t i{}; i < 300; i++) {
-    write_constant(chunk, 1.2 + i, 123);
-  }
-
-  write_chunk(chunk, OP_RETURN, 123);
+  chunk.write_constant(1.2, 123);
+  chunk.write_chunk(OP_RETURN, 123);
 
   disassemble_chunk(chunk, "test chunk");
+
+  VM vm{};
+  vm.interpret(chunk);
 
   return 0;
 }
