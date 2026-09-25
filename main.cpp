@@ -1,9 +1,12 @@
 #include "chunk.hpp"
+#include "cpp_perf.hpp"
 #include "debug.hpp"
 #include "vm.hpp"
 #include <cstddef>
 
 int main() {
+  perf::start();
+
   Chunk chunk{};
 
   chunk.write_constant(1.2, 123);
@@ -22,6 +25,8 @@ int main() {
 
   VM vm{};
   vm.interpret(chunk);
+
+  perf::stop();
 
   return 0;
 }
