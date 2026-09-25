@@ -8,6 +8,13 @@
 
 #define DEBUG_TRACE_EXECUTION
 
+#define BINARY_OP(op)                                                          \
+  do {                                                                         \
+    auto b{pop()};                                                             \
+    auto a{pop()};                                                             \
+    push(a op b);                                                              \
+  } while (false)
+
 InterpretResult VM::interpret(Chunk &chunk) {
   m_chunk = chunk;
   m_ip = &m_chunk.get_code_ref(0);
@@ -42,6 +49,24 @@ InterpretResult VM::run() {
       push(constant);
       break;
     }
+
+    case OP_NEGATE:
+      push(-pop());
+      break;
+
+    // binary
+    case OP_ADD:
+      BINARY_OP(+);
+      break;
+    case OP_SUBTRACT:
+      BINARY_OP(-);
+      break;
+    case OP_MULTIPLY:
+      BINARY_OP(*);
+      break;
+    case OP_DIVIDE:
+      BINARY_OP(/);
+      break;
 
     case OP_RETURN:
       print_value(pop());

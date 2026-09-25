@@ -4,7 +4,18 @@
 #include <cstddef>
 #include <vector>
 
-enum OpCode : std::uint8_t { OP_RETURN, OP_CONSTANT, OP_CONSTANT_LONG };
+enum OpCode : std::uint8_t {
+  OP_RETURN,
+  OP_CONSTANT,
+  OP_CONSTANT_LONG,
+  OP_NEGATE,
+
+  // binary
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE
+};
 
 struct LineRun {
   int line;
