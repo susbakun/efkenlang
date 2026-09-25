@@ -4,8 +4,12 @@
 #include "vm.hpp"
 #include <cstddef>
 
+#define MEASURE
+
 int main() {
+#ifdef MEASURE
   perf::start();
+#endif
 
   Chunk chunk{};
 
@@ -26,7 +30,9 @@ int main() {
   VM vm{};
   vm.interpret(chunk);
 
+#ifdef MEASURE
   perf::stop();
+#endif
 
   return 0;
 }

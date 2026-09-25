@@ -51,7 +51,8 @@ InterpretResult VM::run() {
     }
 
     case OP_NEGATE:
-      push(-pop());
+      // in place
+      *(m_sp - 1) = -*(m_sp - 1);
       break;
 
     // binary
@@ -91,6 +92,9 @@ Value VM::read_constant_long() {
 }
 
 void VM::push(Value value) {
+  if (is_stack_full())
+    throw "Stack overflow";
+
   *m_sp = value;
   m_sp++;
 }
@@ -98,4 +102,8 @@ void VM::push(Value value) {
 Value VM::pop() {
   m_sp--;
   return *m_sp;
+}
+
+bool VM::is_stack_full() const {
+  return m_sp == (m_stack.data() + m_stack.size());
 }

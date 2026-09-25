@@ -15,6 +15,7 @@ enum InterpretResult {
 class VM {
 public:
   VM() = default;
+
   InterpretResult interpret(Chunk &chunk);
 
   void push(Value value);
@@ -26,6 +27,8 @@ private:
   std::uint8_t read_byte();
   Value read_constant();
   Value read_constant_long();
+
+  bool is_stack_full() const;
 
   Chunk m_chunk;
   uint8_t *m_ip;
