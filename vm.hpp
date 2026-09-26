@@ -3,6 +3,7 @@
 #include "chunk.hpp"
 #include "value.hpp"
 #include <array>
+#include <string_view>
 
 #define STACK_MAX 256
 
@@ -16,7 +17,7 @@ class VM {
 public:
   VM() = default;
 
-  InterpretResult interpret(Chunk &chunk);
+  InterpretResult interpret(const std::string_view source);
 
   void push(Value value);
   Value pop();

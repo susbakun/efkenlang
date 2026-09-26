@@ -1,5 +1,6 @@
 #include "vm.hpp"
 #include "chunk.hpp"
+#include "compiler.hpp"
 #include "debug.hpp"
 #include "value.hpp"
 #include <cstddef>
@@ -15,14 +16,13 @@
     push(a op b);                                                              \
   } while (false)
 
-InterpretResult VM::interpret(Chunk &chunk) {
-  m_chunk = chunk;
-  m_ip = &m_chunk.get_code_ref(0);
-  return run();
+InterpretResult VM::interpret(const std::string_view source) {
+  compile(source);
+  return INTERPRET_OK;
 }
 
 InterpretResult VM::run() {
-  for (;;) {
+  while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
     std::print("          ");
     for (Value *slot{m_stack.data()}; slot < m_sp; slot++) {
