@@ -63,6 +63,7 @@ public:
       : m_start{source.data()}, m_current{source.data()}, m_line{1} {}
 
   Token scan_token();
+  bool is_alpha(char c) const;
   bool is_digit(char c) const;
   bool is_at_end() const;
   char advance();
@@ -72,6 +73,9 @@ public:
   Token make_token(TokenType type) const;
   Token error_token(const std::string_view message) const;
   void skip_whitespace();
+  Token identifier();
+  TokenType identifier_type();
+  TokenType check_type(int start, int length, const char *rest, TokenType type);
   Token number();
   Token string();
 

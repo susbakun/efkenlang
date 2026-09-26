@@ -1,4 +1,5 @@
 #include "scanner.hpp"
+#include <cstring>
 
 Token Scanner::scan_token() {
   skip_whitespace();
@@ -8,6 +9,11 @@ Token Scanner::scan_token() {
     return make_token(TOKEN_EOF);
 
   char c{advance()};
+
+  if (is_alpha(c))
+    return identifier();
+  if (is_digit(c))
+    return number();
 
   switch (c) {
   case '(':
@@ -52,6 +58,10 @@ Token Scanner::scan_token() {
   }
 
   return error_token("Unexpected character.");
+}
+
+bool Scanner::is_alpha(char c) const {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_');
 }
 
 bool Scanner::is_digit(char c) const { return c >= '0' && c <= '9'; }
@@ -117,6 +127,74 @@ void Scanner::skip_whitespace() {
       return;
     }
   }
+}
+
+Token Scanner::identifier() {
+  while (is_alpha(peek()) || is_digit(peek())) {
+    advance();
+  }
+
+  return make_token(identifier_type());
+}
+
+TokenType Scanner::identifier_type() {
+  switch (*m_start) {
+  case 'a':
+    return check_type(1, 2, "nd", TOKEN_AND);
+  case 'c':
+    return check_type(1, 4, "lass", TOKEN_CLASS);
+  case 'e':
+    return check_type(1, 3, "lse", TOKEN_ELSE);
+  case 'i':
+    return check_type(1, 1, "f", TOKEN_IF);
+  case 'n':
+    return check_type(1, 2, "il", TOKEN_NIL);
+  case 'o':
+    return check_type(1, 1, "r", TOKEN_OR);
+  case 'p':
+    return check_type(1, 4, "rint", TOKEN_PRINT);
+  case 'r':
+    return check_type(1, 5, "eturn", TOKEN_RETURN);
+  case 's':
+    return check_type(1, 4, "uper", TOKEN_SUPER);
+  case 'v':
+    return check_type(1, 2, "ar", TOKEN_VAR);
+  case 'w':
+    return check_type(1, 4, "hile", TOKEN_WHILE);
+  case 'f':
+    if (m_current - m_start > 1) {
+      switch (m_start[1]) {
+      case 'a':
+        return check_type(2, 4, "lse", TOKEN_FALSE);
+      case 'o':
+        return check_type(2, 1, "r", TOKEN_FOR);
+      case 'u':
+        return check_type(2, 1, "n", TOKEN_FUN);
+      }
+    }
+    break;
+  case 't':
+    if (m_current - m_start > 1) {
+      switch (m_start[1]) {
+      case 'h':
+        return check_type(2, 2, "is", TOKEN_THIS);
+      case 'r':
+        return check_type(2, 2, "ue", TOKEN_TRUE);
+      }
+    }
+    break;
+  }
+
+  return TOKEN_IDENTIFIER;
+}
+
+TokenType Scanner::check_type(int start, int length, const char *rest,
+                              TokenType type) {
+  if (((m_current - m_start) == (start + length)) &&
+      (std::memcmp(m_start + start, rest, length))) {
+    return type;
+  }
+  return TOKEN_IDENTIFIER;
 }
 
 Token Scanner::number() {

@@ -17,7 +17,9 @@ void compile(const std::string_view source) {
     } else {
       std::print("   | ");
     }
-    std::println("{} '{}'", std::to_string(token.type), token.start);
+
+    auto lexeme{std::string{token.start, token.start + token.length}};
+    std::println("{} '{}'", std::to_string(token.type), lexeme);
 
     if (token.type == TOKEN_EOF)
       break;
