@@ -13,4 +13,6 @@ add_executable(${PROJECT_NAME}
     value.cpp
     debug.cpp
     vm.cpp
+    compiler.cpp
+    scanner.cpp
 )
