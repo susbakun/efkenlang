@@ -89,7 +89,7 @@ class inline_timer;
  * \param[in] time The time duration to format
  * \return The duration formatted as a string
  */
-std::string format_duration(const duration &time) {
+inline std::string format_duration(const duration &time) {
   std::stringstream strm;
 
   auto h = std::chrono::duration_cast<hours>(time);
@@ -139,8 +139,9 @@ std::string format_duration(const duration &time) {
  * __FUNCTION__ macro
  * \return Code position formatted as a string.
  */
-std::string format_code_position(const std::string &file, std::size_t line,
-                                 const std::string &function = "") {
+inline std::string format_code_position(const std::string &file,
+                                        std::size_t line,
+                                        const std::string &function = "") {
   std::stringstream strm;
   strm << '#' << std::this_thread::get_id() << ':' << file << ':';
   if (!function.empty())
@@ -159,7 +160,8 @@ std::string format_code_position(const std::string &file, std::size_t line,
  * \param[in] len New length to achieve.
  * \param[in] filler The character to be used to lengthen the string
  */
-void lengthen_string(std::string &str, std::size_t len, char filler = ' ') {
+inline void lengthen_string(std::string &str, std::size_t len,
+                            char filler = ' ') {
   while (str.size() < len)
     str += filler;
 }
@@ -371,12 +373,12 @@ public:
  * \param[in] t The timer to output
  * \return Returns the ostream o
  */
-std::ostream &operator<<(std::ostream &o, const timer &t) {
+inline std::ostream &operator<<(std::ostream &o, const timer &t) {
   o << format_duration(t.get_duration());
   return o;
 }
 
-std::ostream &operator<<(std::ostream &o, const inline_timer &timer) {
+inline std::ostream &operator<<(std::ostream &o, const inline_timer &timer) {
   std::ostringstream strm;
   strm << format_code_position(timer.m_file, timer.m_first_line,
                                timer.m_function);
@@ -387,7 +389,7 @@ std::ostream &operator<<(std::ostream &o, const inline_timer &timer) {
   return o;
 }
 
-std::ostream &operator<<(std::ostream &o, const suite &suite) {
+inline std::ostream &operator<<(std::ostream &o, const suite &suite) {
   auto num_cases = suite.m_cases.size();
   auto num_cases_str = std::to_string(num_cases);
 
@@ -437,7 +439,7 @@ std::ostream &operator<<(std::ostream &o, const suite &suite) {
  *
  * \return Pointer to the std::ostream
  */
-std::ostream *inline_out_ptr() {
+inline std::ostream *inline_out_ptr() {
   static thread_local std::ostream *inline_out_ptr = &std::cout;
   return inline_out_ptr;
 }
@@ -450,7 +452,7 @@ std::ostream *inline_out_ptr() {
  *
  * \return Pointer to the std::ostream
  */
-std::ostream *auto_out_ptr() {
+inline std::ostream *auto_out_ptr() {
   static thread_local std::ostream *auto_out_ptr = &std::cout;
   return auto_out_ptr;
 }
@@ -462,7 +464,7 @@ std::ostream *auto_out_ptr() {
  *
  * \return A reference to the stack of timers.
  */
-std::stack<timer> &timer_stack() {
+inline std::stack<timer> &timer_stack() {
   static thread_local std::stack<timer> timer_stack;
   return timer_stack;
 }
@@ -474,7 +476,7 @@ std::stack<timer> &timer_stack() {
  *
  * \return A reference to the stack of inline_timers
  */
-std::stack<inline_timer> &inline_timer_stack() {
+inline std::stack<inline_timer> &inline_timer_stack() {
   static thread_local std::stack<inline_timer> inline_timer_stack;
   return inline_timer_stack;
 }
@@ -485,7 +487,7 @@ std::stack<inline_timer> &inline_timer_stack() {
  * This function creates a new basic timer which on the timer stack and starts
  * it.
  */
-void start() { timer_stack().push(timer()); }
+inline void start() { timer_stack().push(timer()); }
 
 /**
  * \brief Stops the last timer on the stack and prints the measured time.
@@ -493,7 +495,7 @@ void start() { timer_stack().push(timer()); }
  * This function stops the last timer on the stack and prints the result on
  * the inline out ostream.
  */
-void stop() {
+inline void stop() {
   timer_stack().top().stop();
   *inline_out_ptr() << timer_stack().top() << '\n';
   timer_stack().pop();

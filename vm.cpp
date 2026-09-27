@@ -17,8 +17,19 @@
   } while (false)
 
 InterpretResult VM::interpret(const std::string_view source) {
-  compile(source);
-  return INTERPRET_OK;
+  Chunk chunk{};
+  Compiler compiler{source, chunk};
+
+  if (!compiler.compile()) {
+    return INTERPRET_COMPILE_ERROR;
+  }
+
+  m_chunk = chunk;
+  m_ip = &m_chunk.get_code_ref(0);
+
+  auto result{run()};
+
+  return result;
 }
 
 InterpretResult VM::run() {
