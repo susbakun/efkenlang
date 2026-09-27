@@ -14,7 +14,8 @@ enum OpCode : std::uint8_t {
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,
-  OP_DIVIDE
+  OP_DIVIDE,
+  OP_COMMA
 };
 
 struct LineRun {

@@ -16,6 +16,13 @@
     push(a op b);                                                              \
   } while (false)
 
+#define COMMA_OP()                                                             \
+  do {                                                                         \
+    auto b{pop()};                                                             \
+    pop();                                                                     \
+    push(b);                                                                   \
+  } while (false)
+
 InterpretResult VM::interpret(const std::string_view source) {
   Chunk chunk{};
   Compiler compiler{source, chunk};
@@ -78,6 +85,9 @@ InterpretResult VM::run() {
       break;
     case OP_DIVIDE:
       BINARY_OP(/);
+      break;
+    case OP_COMMA:
+      COMMA_OP();
       break;
 
     case OP_RETURN:

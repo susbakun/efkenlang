@@ -41,7 +41,7 @@ void Compiler::advance() {
   }
 }
 
-void Compiler::expression() { parse_precedence(PREC_ASSIGNMENT); }
+void Compiler::expression() { parse_precedence(PREC_COMMA); }
 
 ParseRule &Compiler::get_rule(const TokenType type) { return m_rules[type]; }
 
@@ -88,7 +88,7 @@ void Compiler::unary() {
 
   switch (type) {
   case TOKEN_MINUS:
-    emit_byte(TOKEN_MINUS);
+    emit_byte(OP_NEGATE);
     break;
   default:
     return;
@@ -113,6 +113,9 @@ void Compiler::binary() {
   case TOKEN_SLASH:
     emit_byte(OP_DIVIDE);
     break;
+
+  case TOKEN_COMMA:
+    emit_byte(OP_COMMA);
   default:
     return;
   }
