@@ -87,6 +87,8 @@ void Compiler::unary() {
   parse_precedence(PREC_UNARY);
 
   switch (type) {
+  case TOKEN_BANG:
+    emit_byte(OP_NOT);
   case TOKEN_MINUS:
     emit_byte(OP_NEGATE);
     break;

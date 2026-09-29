@@ -11,6 +11,8 @@ enum OpCode : std::uint8_t {
   OP_TRUE,
   OP_FALSE,
   OP_NIL,
+
+  OP_NOT,
   OP_NEGATE,
 
   // binary

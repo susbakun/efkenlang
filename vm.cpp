@@ -82,6 +82,14 @@ InterpretResult VM::run() {
       push(nil_val());
       break;
 
+    case OP_NOT:
+      if (!is_bool(peek(0))) {
+        runtime_error("Operand must be a boolean");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      m_sp[-1] = bool_val(!as_boolean(m_sp[-1]));
+      break;
+
     case OP_NEGATE:
       // in place
       if (!is_number(peek(0))) {

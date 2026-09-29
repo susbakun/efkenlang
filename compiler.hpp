@@ -83,7 +83,7 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_SEMICOLON
       {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_SLASH
       {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_STAR
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_BANG
+      {&Compiler::unary, nullptr, PREC_NONE},           // TOKEN_BANG
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_BANG_EQUAL
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_EQUAL
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_EQUAL_EQUAL
