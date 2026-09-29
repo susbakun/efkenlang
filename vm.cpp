@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <print>
+#include <string>
 
 #define DEBUG_TRACE_EXECUTION
 
@@ -120,7 +121,10 @@ InterpretResult VM::run() {
     case OP_ADD:
       if (is_obj_type(peek(0), OBJ_STRING) &&
           is_obj_type(peek(1), OBJ_STRING)) {
-        concatenate();
+        concatenate_two_strings();
+      } else if (is_obj_type(peek(0), OBJ_STRING) ||
+                 is_obj_type(peek(1), OBJ_STRING)) {
+        concatenate_string_and_number();
       } else if (peek(0).is_number() && peek(1).is_number()) {
         double b{pop().as_number()};
         double a{pop().as_number()};
@@ -165,11 +169,26 @@ Value VM::read_constant_long() {
   return m_chunk.get_constant(ind);
 }
 
-void VM::concatenate() {
+void VM::concatenate_two_strings() {
   ObjString *b{as_string(pop())};
   ObjString *a{as_string(pop())};
 
   ObjString *result{take_string(a->str + b->str)};
+  push(Value{result});
+}
+
+void VM::concatenate_string_and_number() {
+  auto b{pop()};
+  auto a{pop()};
+
+  std::string concatenate{};
+  if (a.is_number()) {
+    concatenate = (a.number_to_string() + as_string(b)->str);
+  } else if (b.is_number()) {
+    concatenate = (as_string(a)->str + b.number_to_string());
+  }
+
+  ObjString *result{take_string(std::move(concatenate))};
   push(Value{result});
 }
 

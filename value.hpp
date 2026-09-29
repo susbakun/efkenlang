@@ -25,8 +25,9 @@ public:
   bool is_nil() const;
   bool is_number() const;
   bool is_obj() const;
-
   bool is_equal(const Value &b) const;
+
+  std::string number_to_string() const;
 
   void print_value() const;
 

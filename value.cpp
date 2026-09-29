@@ -2,6 +2,7 @@
 #include "obj.hpp"
 #include <cstddef>
 #include <cstring>
+#include <format>
 #include <print>
 
 bool Value::as_boolean() const { return as.boolean; }
@@ -30,6 +31,14 @@ bool Value::is_equal(const Value &v2) const {
     return a_string->str == b_string->str;
   }
   }
+}
+
+std::string Value::number_to_string() const {
+  if (is_number()) {
+    return std::format("{}", as_number());
+  }
+
+  return "";
 }
 
 void Value::print_value() const {

@@ -30,7 +30,8 @@ private:
   std::uint8_t read_byte();
   Value read_constant();
   Value read_constant_long();
-  void concatenate();
+  void concatenate_two_strings();
+  void concatenate_string_and_number();
   ObjString *take_string(std::string str);
 
   bool is_stack_full() const;

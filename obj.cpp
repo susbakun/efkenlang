@@ -26,6 +26,13 @@ bool is_obj_type(const Value &value, const ObjType type) {
   return value.is_obj() && value.as_obj()->type == type;
 }
 
+std::string object_to_string(const Value &value) {
+  switch (obj_type(value)) {
+  case OBJ_STRING:
+    return std::format("{}", as_cpp_str(value));
+  }
+}
+
 void print_object(const Value &value) {
   switch (obj_type(value)) {
   case OBJ_STRING:
