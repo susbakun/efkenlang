@@ -16,6 +16,9 @@ enum OpCode : std::uint8_t {
   OP_NEGATE,
 
   // binary
+  OP_EQUAL,
+  OP_GREATER,
+  OP_LESS,
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,

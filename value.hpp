@@ -24,6 +24,8 @@ bool is_bool(Value value);
 bool is_nil(Value value);
 bool is_number(Value value);
 
+bool is_equal(Value v1, Value v2);
+
 void print_value(Value value);
 
 class ValueArray {

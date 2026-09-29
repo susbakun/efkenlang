@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <print>
 
 #define DEBUG_TRACE_EXECUTION
@@ -100,6 +101,20 @@ InterpretResult VM::run() {
       break;
 
     // binary
+    case OP_EQUAL: {
+      auto v1{pop()};
+      auto v2{pop()};
+      push(bool_val(is_equal(v1, v2)));
+      break;
+    }
+
+    case OP_GREATER:
+      BINARY_OP(number_val, >);
+      break;
+    case OP_LESS:
+      BINARY_OP(number_val, <);
+      break;
+
     case OP_ADD:
       BINARY_OP(number_val, +);
       break;
@@ -160,7 +175,7 @@ bool VM::is_stack_full() const {
 void VM::runtime_error(const std::string_view format, ...) {
   va_list args;
   va_start(args, format);
-  std::println("{} {}", format, args);
+  std::vfprintf(stderr, format.data(), args);
   va_end(args);
 
   auto instruction{

@@ -13,16 +13,30 @@ bool is_bool(Value value) { return value.type == VAL_BOOL; }
 bool is_nil(Value value) { return value.type == VAL_NIL; }
 bool is_number(Value value) { return value.type == VAL_NUMBER; }
 
+bool is_equal(Value v1, Value v2) {
+  if (v1.type != v2.type)
+    return false;
+
+  switch (v1.type) {
+  case VAL_BOOL:
+    return as_boolean(v1) == as_boolean(v2);
+  case VAL_NIL:
+    return true;
+  case VAL_NUMBER:
+    return as_number(v1) == as_number(v2);
+  }
+}
+
 void print_value(Value value) {
   switch (value.type) {
   case VAL_BOOL:
-    std::println("{}", as_boolean(value) ? "true" : "false");
+    std::print("{}", as_boolean(value) ? "true" : "false");
     break;
   case VAL_NIL:
-    std::println("nil");
+    std::print("nil");
     break;
   case VAL_NUMBER:
-    std::println("{}", as_number(value));
+    std::print("{}", as_number(value));
     break;
   }
 }

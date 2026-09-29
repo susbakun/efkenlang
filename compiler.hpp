@@ -84,13 +84,13 @@ private:
       {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_SLASH
       {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_STAR
       {&Compiler::unary, nullptr, PREC_NONE},           // TOKEN_BANG
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_BANG_EQUAL
+      {nullptr, &Compiler::binary, PREC_EQUALITY},      // TOKEN_BANG_EQUAL
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_EQUAL
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_EQUAL_EQUAL
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_GREATER
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_GREATER_EQUAL
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_LESS
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_LESS_EQUAL
+      {nullptr, &Compiler::binary, PREC_EQUALITY},      // TOKEN_EQUAL_EQUAL
+      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_GREATER
+      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_GREATER_EQUAL
+      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS
+      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS_EQUAL
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_IDENTIFIER
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_STRING
       {&Compiler::number, nullptr, PREC_NONE},          // TOKEN_NUMBER
