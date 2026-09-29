@@ -15,4 +15,5 @@ add_executable(${PROJECT_NAME}
     vm.cpp
     compiler.cpp
     scanner.cpp
+    obj.cpp
 )

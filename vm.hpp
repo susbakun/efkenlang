@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chunk.hpp"
+#include "obj.hpp"
 #include "value.hpp"
 #include <array>
 #include <string_view>
@@ -29,6 +30,8 @@ private:
   std::uint8_t read_byte();
   Value read_constant();
   Value read_constant_long();
+  void concatenate();
+  ObjString *take_string(std::string str);
 
   bool is_stack_full() const;
 

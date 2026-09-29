@@ -2,24 +2,26 @@
 #include "chunk.hpp"
 #include "compiler.hpp"
 #include "debug.hpp"
+#include "obj.hpp"
 #include "value.hpp"
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <print>
 
 #define DEBUG_TRACE_EXECUTION
 
-#define BINARY_OP(value_type, op)                                              \
+#define BINARY_OP(op)                                                          \
   do {                                                                         \
-    if (!is_number(peek(0)) || !is_number(peek(1))) {                          \
+    if (!peek(0).is_number() || !peek(1).is_number()) {                        \
       runtime_error("Operands must be numbers.");                              \
       return INTERPRET_RUNTIME_ERROR;                                          \
     }                                                                          \
-    double b{as_number(pop())};                                                \
-    double a{as_number(pop())};                                                \
-    push(value_type(a op b));                                                  \
+    double b{pop().as_number()};                                               \
+    double a{pop().as_number()};                                               \
+    push(Value{a op b});                                                       \
   } while (false)
 
 #define COMMA_OP()                                                             \
@@ -51,7 +53,7 @@ InterpretResult VM::run() {
     std::print("          ");
     for (Value *slot{m_stack.data()}; slot < m_sp; slot++) {
       std::print("[ ");
-      print_value(*slot);
+      slot->print_value();
       std::print(" ]");
     }
     std::println();
@@ -74,65 +76,75 @@ InterpretResult VM::run() {
       break;
     }
     case OP_FALSE:
-      push(bool_val(false));
+      push(Value{false});
       break;
     case OP_TRUE:
-      push(bool_val(true));
+      push(Value{true});
       break;
     case OP_NIL:
-      push(nil_val());
+      push(Value{});
       break;
 
     case OP_NOT:
-      if (!is_bool(peek(0))) {
+      if (!peek(0).is_bool()) {
         runtime_error("Operand must be a boolean");
         return INTERPRET_RUNTIME_ERROR;
       }
-      m_sp[-1] = bool_val(!as_boolean(m_sp[-1]));
+      m_sp[-1] = Value{!m_sp[-1].as_boolean()};
       break;
 
     case OP_NEGATE:
       // in place
-      if (!is_number(peek(0))) {
+      if (!peek(0).is_number()) {
         runtime_error("Operand must be a number");
         return INTERPRET_RUNTIME_ERROR;
       }
-      m_sp[-1] = number_val(-as_number(m_sp[-1]));
+      m_sp[-1] = Value{-m_sp[-1].as_number()};
       break;
 
     // binary
     case OP_EQUAL: {
       auto v1{pop()};
       auto v2{pop()};
-      push(bool_val(is_equal(v1, v2)));
+      push(Value{v1.is_equal(v2)});
       break;
     }
 
     case OP_GREATER:
-      BINARY_OP(number_val, >);
+      BINARY_OP(>);
       break;
     case OP_LESS:
-      BINARY_OP(number_val, <);
+      BINARY_OP(<);
       break;
 
     case OP_ADD:
-      BINARY_OP(number_val, +);
+      if (is_obj_type(peek(0), OBJ_STRING) &&
+          is_obj_type(peek(1), OBJ_STRING)) {
+        concatenate();
+      } else if (peek(0).is_number() && peek(1).is_number()) {
+        double b{pop().as_number()};
+        double a{pop().as_number()};
+        push(Value{a + b});
+      } else {
+        runtime_error("Operands must be two numbers or two string ");
+        return INTERPRET_RUNTIME_ERROR;
+      }
       break;
     case OP_SUBTRACT:
-      BINARY_OP(number_val, -);
+      BINARY_OP(-);
       break;
     case OP_MULTIPLY:
-      BINARY_OP(number_val, *);
+      BINARY_OP(*);
       break;
     case OP_DIVIDE:
-      BINARY_OP(number_val, /);
+      BINARY_OP(/);
       break;
     case OP_COMMA:
       COMMA_OP();
       break;
 
     case OP_RETURN:
-      print_value(pop());
+      pop().print_value();
       std::println();
       return INTERPRET_OK;
     }
@@ -151,6 +163,18 @@ Value VM::read_constant_long() {
   auto ind{(ind_first_byte << 16) + (ind_second_byte << 8) + ind_third_byte};
 
   return m_chunk.get_constant(ind);
+}
+
+void VM::concatenate() {
+  ObjString *b{as_string(pop())};
+  ObjString *a{as_string(pop())};
+
+  ObjString *result{take_string(a->str + b->str)};
+  push(Value{result});
+}
+
+ObjString *VM::take_string(std::string str) {
+  return allocate_string(std::move(str));
 }
 
 void VM::push(Value value) {

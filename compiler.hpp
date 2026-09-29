@@ -49,6 +49,7 @@ public:
   void expression();
   ParseRule &get_rule(const TokenType type);
   void number();
+  void string();
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
@@ -92,7 +93,7 @@ private:
       {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS
       {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS_EQUAL
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_IDENTIFIER
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_STRING
+      {&Compiler::string, nullptr, PREC_NONE},          // TOKEN_STRING
       {&Compiler::number, nullptr, PREC_NONE},          // TOKEN_NUMBER
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_AND
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_CLASS

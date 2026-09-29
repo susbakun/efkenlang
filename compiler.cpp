@@ -2,6 +2,7 @@
 #include "compiler.hpp"
 #include "chunk.hpp"
 #include "debug.hpp"
+#include "obj.hpp"
 #include "scanner.hpp"
 #include "value.hpp"
 #include <iostream>
@@ -47,7 +48,16 @@ ParseRule &Compiler::get_rule(const TokenType type) { return m_rules[type]; }
 
 void Compiler::number() {
   double value{std::stod(m_parser.previous.start)};
-  emit_constant(number_val(value));
+  emit_constant(Value{value});
+}
+
+void Compiler::string() {
+  auto str{
+      std::string(m_parser.previous.start + 1, m_parser.previous.length - 2)};
+
+  auto *string{allocate_string(std::move(str))};
+
+  emit_constant(Value{string});
 }
 
 void Compiler::emit_constant(Value value) {

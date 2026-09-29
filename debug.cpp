@@ -77,7 +77,7 @@ std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
   auto constant{chunk.get_code(offset + 1)};
 
   std::print("{:16} {:4} '", name, constant);
-  print_value(chunk.get_constant(constant));
+  chunk.get_constant(constant).print_value();
   std::println();
   return offset + 2;
 }
@@ -93,7 +93,7 @@ std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
   auto constant{(first_byte << 16) + (second_byte << 8) + third_byte};
 
   std::print("{:16} {:4} '", name, constant);
-  print_value(chunk.get_constant(constant));
+  chunk.get_constant(constant).print_value();
   std::println();
   return offset + 4;
 }

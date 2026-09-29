@@ -1,44 +1,52 @@
 #include "value.hpp"
+#include "obj.hpp"
 #include <cstddef>
+#include <cstring>
 #include <print>
 
-Value bool_val(bool value) { return Value{VAL_BOOL, {.boolean = value}}; }
-Value nil_val() { return Value{VAL_NIL, {.number = 0}}; }
-Value number_val(double value) { return Value{VAL_NUMBER, {.number = value}}; }
+bool Value::as_boolean() const { return as.boolean; }
+double Value::as_number() const { return as.number; }
+Obj *Value::as_obj() const { return as.obj; }
 
-bool as_boolean(Value value) { return value.as.boolean; }
-double as_number(Value value) { return value.as.number; }
+bool Value::is_bool() const { return m_type == VAL_BOOL; }
+bool Value::is_nil() const { return m_type == VAL_NIL; }
+bool Value::is_number() const { return m_type == VAL_NUMBER; }
+bool Value::is_obj() const { return m_type == VAL_OBJ; }
 
-bool is_bool(Value value) { return value.type == VAL_BOOL; }
-bool is_nil(Value value) { return value.type == VAL_NIL; }
-bool is_number(Value value) { return value.type == VAL_NUMBER; }
-
-bool is_equal(Value v1, Value v2) {
-  if (v1.type != v2.type)
+bool Value::is_equal(const Value &v2) const {
+  if (m_type != v2.m_type)
     return false;
 
-  switch (v1.type) {
+  switch (m_type) {
   case VAL_BOOL:
-    return as_boolean(v1) == as_boolean(v2);
+    return this->as_boolean() == v2.as_boolean();
   case VAL_NIL:
     return true;
   case VAL_NUMBER:
-    return as_number(v1) == as_number(v2);
+    return this->as_number() == v2.as_number();
+  case VAL_OBJ: {
+    ObjString *a_string{as_string(*this)};
+    ObjString *b_string{as_string(*this)};
+    return a_string->str == b_string->str;
+  }
   }
 }
 
-void print_value(Value value) {
-  switch (value.type) {
+void Value::print_value() const {
+  switch (m_type) {
   case VAL_BOOL:
-    std::print("{}", as_boolean(value) ? "true" : "false");
+    std::print("{}", this->as_boolean() ? "true" : "false");
     break;
   case VAL_NIL:
     std::print("nil");
     break;
   case VAL_NUMBER:
-    std::print("{}", as_number(value));
+    std::print("{}", this->as_number());
+    break;
+  case VAL_OBJ:
+    print_object(*this);
     break;
   }
 }
 
-void ValueArray::write_value(Value value) { m_values.push_back(value); }
+void ValueArray::write_value(const Value &value) { m_values.push_back(value); }
