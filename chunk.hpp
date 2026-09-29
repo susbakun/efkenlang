@@ -8,6 +8,9 @@ enum OpCode : std::uint8_t {
   OP_RETURN,
   OP_CONSTANT,
   OP_CONSTANT_LONG,
+  OP_TRUE,
+  OP_FALSE,
+  OP_NIL,
   OP_NEGATE,
 
   // binary

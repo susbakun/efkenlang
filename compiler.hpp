@@ -58,6 +58,7 @@ public:
   void grouping();
   void unary();
   void binary();
+  void literal();
 
   void parse_precedence(Precedence precedence);
 
@@ -96,17 +97,17 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_AND
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_CLASS
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_ELSE
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_FALSE
+      {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_FALSE
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_FOR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_FUN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_IF
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_NIL
+      {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_NIL
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_OR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_PRINT
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_RETURN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_SUPER
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_THIS
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_TRUE
+      {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_TRUE
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_VAR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_WHILE
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_ERROR

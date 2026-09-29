@@ -47,7 +47,7 @@ ParseRule &Compiler::get_rule(const TokenType type) { return m_rules[type]; }
 
 void Compiler::number() {
   double value{std::stod(m_parser.previous.start)};
-  emit_constant(value);
+  emit_constant(number_val(value));
 }
 
 void Compiler::emit_constant(Value value) {
@@ -116,6 +116,22 @@ void Compiler::binary() {
 
   case TOKEN_COMMA:
     emit_byte(OP_COMMA);
+  default:
+    return;
+  }
+}
+
+void Compiler::literal() {
+  switch (m_parser.previous.type) {
+  case TOKEN_FALSE:
+    emit_byte(OP_FALSE);
+    break;
+  case TOKEN_TRUE:
+    emit_byte(OP_TRUE);
+    break;
+  case TOKEN_NIL:
+    emit_byte(OP_NIL);
+    break;
   default:
     return;
   }

@@ -191,9 +191,10 @@ TokenType Scanner::identifier_type() {
 TokenType Scanner::check_type(int start, int length, const char *rest,
                               TokenType type) {
   if (((m_current - m_start) == (start + length)) &&
-      (std::memcmp(m_start + start, rest, length))) {
+      (std::memcmp(m_start + start, rest, length)) == 0) {
     return type;
   }
+
   return TOKEN_IDENTIFIER;
 }
 

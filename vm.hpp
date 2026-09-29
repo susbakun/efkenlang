@@ -21,6 +21,7 @@ public:
 
   void push(Value value);
   Value pop();
+  Value peek(int distance);
 
 private:
   InterpretResult run();
@@ -30,6 +31,9 @@ private:
   Value read_constant_long();
 
   bool is_stack_full() const;
+
+  void runtime_error(const std::string_view format, ...);
+  void reset_stack();
 
   Chunk m_chunk;
   uint8_t *m_ip;

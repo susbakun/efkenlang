@@ -1,7 +1,6 @@
 #pragma once
 
 #include "chunk.hpp"
-#include "value.hpp"
 #include <cstddef>
 #include <string_view>
 
@@ -13,5 +12,4 @@ std::size_t constant_instruction(const std::string_view name, Chunk &chunk,
                                  std::size_t offset);
 std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
                                       std::size_t offset);
-void print_value(Value value);
 int lookup_line(const Chunk &chunk, std::size_t offset);
