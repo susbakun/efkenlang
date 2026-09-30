@@ -11,6 +11,7 @@
 #include <cstring>
 #include <print>
 #include <string>
+#include <string_view>
 
 #define DEBUG_TRACE_EXECUTION
 
@@ -34,7 +35,7 @@
 
 InterpretResult VM::interpret(const std::string_view source) {
   Chunk chunk{};
-  Compiler compiler{source, chunk};
+  Compiler compiler{*this, source, chunk};
 
   if (!compiler.compile()) {
     return INTERPRET_COMPILE_ERROR;
@@ -61,6 +62,7 @@ InterpretResult VM::run() {
 
     disassemble_instruction(
         m_chunk, static_cast<std::size_t>(m_ip - &m_chunk.get_code_ref(0)));
+
 #endif
 
     std::uint8_t instruction{read_byte()};
@@ -189,11 +191,12 @@ void VM::concatenate_string_and_number() {
   }
 
   ObjString *result{take_string(std::move(concatenate))};
+
   push(Value{result});
 }
 
 ObjString *VM::take_string(std::string str) {
-  return allocate_string(std::move(str));
+  return allocate_string(*this, std::move(str));
 }
 
 void VM::push(Value value) {
@@ -210,6 +213,18 @@ Value VM::pop() {
 }
 
 Value VM::peek(int distance) { return m_sp[-1 - distance]; }
+
+void VM::add_string(std::string key, ObjString *value) {
+  m_strings.insert({key, value});
+}
+
+std::optional<Value> VM::find_string(const std::string &key) {
+  auto it{m_strings.find(key)};
+  if (it != m_strings.end()) {
+    return it->second;
+  }
+  return {};
+}
 
 bool VM::is_stack_full() const {
   return m_sp == (m_stack.data() + m_stack.size());

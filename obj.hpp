@@ -2,6 +2,8 @@
 
 #include "value.hpp"
 
+class VM;
+
 enum ObjType { OBJ_STRING };
 
 struct Obj {
@@ -17,7 +19,7 @@ struct ObjString : public Obj {
 
 ObjType obj_type(const Value &value);
 
-ObjString *allocate_string(std::string str);
+ObjString *allocate_string(VM &vm, std::string str);
 
 ObjString *as_string(const Value &value);
 std::string &as_cpp_str(const Value &value);

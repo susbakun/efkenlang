@@ -55,7 +55,7 @@ void Compiler::string() {
   auto str{
       std::string(m_parser.previous.start + 1, m_parser.previous.length - 2)};
 
-  auto *string{allocate_string(std::move(str))};
+  auto *string{allocate_string(m_vm, std::move(str))};
 
   emit_constant(Value{string});
 }

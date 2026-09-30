@@ -4,7 +4,9 @@
 #include "obj.hpp"
 #include "value.hpp"
 #include <array>
+#include <optional>
 #include <string_view>
+#include <unordered_map>
 
 #define STACK_MAX 256
 
@@ -23,6 +25,9 @@ public:
   void push(Value value);
   Value pop();
   Value peek(int distance);
+
+  void add_string(std::string key, ObjString *value);
+  std::optional<Value> find_string(const std::string &key);
 
 private:
   InterpretResult run();
@@ -43,4 +48,5 @@ private:
   uint8_t *m_ip;
   std::array<Value, STACK_MAX> m_stack{};
   Value *m_sp{m_stack.data()};
+  std::unordered_map<std::string, ObjString *> m_strings{};
 };

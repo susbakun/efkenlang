@@ -1,5 +1,6 @@
 #include "obj.hpp"
 #include "value.hpp"
+#include "vm.hpp"
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -7,10 +8,17 @@
 
 ObjType obj_type(const Value &value) { return value.as_obj()->type; }
 
-ObjString *allocate_string(std::string str) {
+ObjString *allocate_string(VM &vm, std::string str) {
+  auto string{vm.find_string(str)};
+  if (string)
+    return as_string(string.value());
+
   auto *object = new ObjString{};
   object->type = OBJ_STRING;
-  object->str = std::move(str);
+  object->str = str; // copy str here
+
+  // then move it
+  vm.add_string(std::move(str), object);
 
   return object;
 }

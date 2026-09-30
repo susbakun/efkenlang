@@ -26,9 +26,7 @@ bool Value::is_equal(const Value &v2) const {
   case VAL_NUMBER:
     return this->as_number() == v2.as_number();
   case VAL_OBJ: {
-    ObjString *a_string{as_string(*this)};
-    ObjString *b_string{as_string(*this)};
-    return a_string->str == b_string->str;
+    return this->as_obj() == v2.as_obj();
   }
   }
 }

@@ -2,6 +2,7 @@
 
 #include "chunk.hpp"
 #include "scanner.hpp"
+#include "vm.hpp"
 #include <array>
 #include <cstdint>
 #include <string_view>
@@ -40,8 +41,8 @@ struct ParseRule {
 
 class Compiler {
 public:
-  Compiler(const std::string_view source, Chunk &chunk)
-      : m_scanner{source}, m_compiling_chunk{chunk} {}
+  Compiler(VM &vm, const std::string_view source, Chunk &chunk)
+      : m_vm{vm}, m_scanner{source}, m_compiling_chunk{chunk} {}
 
   bool compile();
   void consume(const TokenType type, const std::string_view message);
@@ -68,6 +69,7 @@ public:
   void error_at(Token &token, const std::string_view message);
 
 private:
+  VM &m_vm;
   Scanner m_scanner;
   Parser m_parser{};
   Chunk &m_compiling_chunk;
