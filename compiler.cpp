@@ -86,7 +86,15 @@ std::uint8_t Compiler::identifier_constant(Token &name) {
   ObjString *obj_name{
       allocate_string(m_vm, std::string(name.start, name.length))};
 
-  return m_compiling_chunk.add_constant(obj_name);
+  // we check if we already encountered the
+  // variable's name
+  if (m_variables_index.contains(obj_name))
+    return m_variables_index[obj_name];
+
+  auto ind{m_compiling_chunk.add_constant(obj_name)};
+  m_variables_index[obj_name] = ind;
+
+  return ind;
 }
 
 void Compiler::define_variable(std::uint8_t global) {

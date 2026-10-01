@@ -89,6 +89,7 @@ private:
   Scanner m_scanner;
   Parser m_parser{};
   Chunk &m_compiling_chunk;
+  std::unordered_map<ObjString *, std::uint8_t> m_variables_index{};
 
   std::array<ParseRule, 40> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
