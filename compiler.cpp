@@ -96,6 +96,8 @@ void Compiler::define_variable(std::uint8_t global) {
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
     print_statement();
+  } else {
+    expression_statement();
   }
 }
 
@@ -140,12 +142,12 @@ void Compiler::syncronize() {
 
 ParseRule &Compiler::get_rule(const TokenType type) { return m_rules[type]; }
 
-void Compiler::number() {
+void Compiler::number(bool can_assign) {
   double value{std::stod(m_parser.previous.start)};
   emit_constant(Value{value});
 }
 
-void Compiler::string() {
+void Compiler::string(bool can_assign) {
   auto str{
       std::string(m_parser.previous.start + 1, m_parser.previous.length - 2)};
 
@@ -154,11 +156,19 @@ void Compiler::string() {
   emit_constant(Value{string});
 }
 
-void Compiler::variable() { named_variable(m_parser.previous); }
+void Compiler::variable(bool can_assign) {
+  named_variable(m_parser.previous, can_assign);
+}
 
-void Compiler::named_variable(Token &name) {
+void Compiler::named_variable(Token &name, bool can_assign) {
   std::uint8_t arg{identifier_constant(name)};
-  emit_bytes(OP_GET_GLOBAL, arg);
+
+  if (can_assign && match(TOKEN_EQUAL)) {
+    expression();
+    emit_bytes(OP_SET_GLOBAL, arg);
+  } else {
+    emit_bytes(OP_GET_GLOBAL, arg);
+  }
 }
 
 void Compiler::emit_constant(Value value) {
@@ -186,12 +196,12 @@ void Compiler::end_compiler() {
 
 void Compiler::emit_return() { emit_byte(OP_RETURN); }
 
-void Compiler::grouping() {
+void Compiler::grouping(bool can_assign) {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after a grouping expression.");
 }
 
-void Compiler::unary() {
+void Compiler::unary(bool can_assign) {
   auto type{m_parser.previous.type};
 
   // Compile the operand
@@ -209,7 +219,7 @@ void Compiler::unary() {
   }
 }
 
-void Compiler::binary() {
+void Compiler::binary(bool can_assign) {
   auto operator_type{m_parser.previous.type};
   ParseRule &rule{get_rule(operator_type)};
   parse_precedence(static_cast<Precedence>(rule.precedence + 1));
@@ -253,7 +263,7 @@ void Compiler::binary() {
   }
 }
 
-void Compiler::literal() {
+void Compiler::literal(bool can_assign) {
   switch (m_parser.previous.type) {
   case TOKEN_FALSE:
     emit_byte(OP_FALSE);
@@ -278,14 +288,19 @@ void Compiler::parse_precedence(Precedence precedence) {
     return;
   }
 
+  bool can_assign{precedence <= PREC_ASSIGNMENT};
   // fucking weird syntax because ParseFn
   // needs to know which object to operate on
-  (this->*prefix_rule)();
+  (this->*prefix_rule)(can_assign);
 
   while (precedence <= get_rule(m_parser.current.type).precedence) {
     advance();
     auto inline_rule{get_rule(m_parser.previous.type).infix};
-    (this->*inline_rule)();
+    (this->*inline_rule)(can_assign);
+  }
+
+  if (can_assign && match(TOKEN_EQUAL)) {
+    error("Invalid assignment target.");
   }
 }
 

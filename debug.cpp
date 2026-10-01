@@ -48,6 +48,8 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
     return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
   case OP_GET_GLOBAL:
     return constant_instruction("OP_GET_GLOBAL", chunk, offset);
+  case OP_SET_GLOBAL:
+    return constant_instruction("OP_SET_GLOBAL", chunk, offset);
 
     // binary
   case OP_EQUAL:

@@ -129,6 +129,17 @@ InterpretResult VM::run() {
       push(value->second);
       break;
     }
+    case OP_SET_GLOBAL: {
+      ObjString *name{read_string()};
+      if (!m_globals.contains(name)) {
+        runtime_error("Undefined variable " + name->str + " .");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+
+      m_globals.insert({name, peek(0)});
+
+      break;
+    }
 
     // binary
     case OP_EQUAL: {

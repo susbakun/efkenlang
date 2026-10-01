@@ -31,7 +31,7 @@ enum Precedence {
 
 class Compiler;
 
-using ParseFn = void (Compiler::*)();
+using ParseFn = void (Compiler::*)(bool can_assign);
 
 struct ParseRule {
   ParseFn prefix;
@@ -63,20 +63,20 @@ public:
   void syncronize();
 
   ParseRule &get_rule(const TokenType type);
-  void number();
-  void string();
-  void variable();
-  void named_variable(Token &name);
+  void number(bool can_assign);
+  void string(bool can_assign);
+  void variable(bool can_assign);
+  void named_variable(Token &name, bool can_assign);
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
   void end_compiler();
   void emit_return();
 
-  void grouping();
-  void unary();
-  void binary();
-  void literal();
+  void grouping(bool can_assign);
+  void unary(bool can_assign);
+  void binary(bool can_assign);
+  void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
 
