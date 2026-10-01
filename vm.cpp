@@ -114,7 +114,7 @@ InterpretResult VM::run() {
       break;
     case OP_DEFINE_GLOBAL: {
       ObjString *name{read_string()};
-      m_globals.insert({name, peek(0)});
+      m_globals[name] = peek(0);
       pop();
       break;
     }
@@ -136,7 +136,7 @@ InterpretResult VM::run() {
         return INTERPRET_RUNTIME_ERROR;
       }
 
-      m_globals.insert({name, peek(0)});
+      m_globals[name] = peek(0);
 
       break;
     }
