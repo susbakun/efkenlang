@@ -1,10 +1,10 @@
-
 #include "compiler.hpp"
 #include "chunk.hpp"
 #include "debug.hpp"
 #include "obj.hpp"
 #include "scanner.hpp"
 #include "value.hpp"
+#include <cstdint>
 #include <iostream>
 #include <print>
 #include <string>
@@ -53,7 +53,45 @@ bool Compiler::match(TokenType type) {
 
 bool Compiler::check(TokenType type) { return m_parser.current.type == type; }
 
-void Compiler::declaration() { statement(); }
+void Compiler::declaration() {
+  if (match(TOKEN_VAR)) {
+    var_declration();
+  } else {
+    statement();
+  }
+
+  if (m_parser.panic_mode)
+    syncronize();
+}
+
+void Compiler::var_declration() {
+  std::uint8_t global{parse_variable("Expect variable name")};
+
+  if (match(TOKEN_EQUAL)) {
+    expression();
+  } else {
+    emit_byte(OP_NIL);
+  }
+  consume(TOKEN_SEMICOLON, "Expect ';' after varialbe declration.");
+
+  define_variable(global);
+}
+
+std::uint8_t Compiler::parse_variable(const std::string_view error_message) {
+  consume(TOKEN_IDENTIFIER, error_message);
+  return identifier_constant(m_parser.previous);
+}
+
+std::uint8_t Compiler::identifier_constant(Token &name) {
+  ObjString *obj_name{
+      allocate_string(m_vm, std::string(name.start, name.length))};
+
+  return m_compiling_chunk.add_constant(obj_name);
+}
+
+void Compiler::define_variable(std::uint8_t global) {
+  emit_bytes(OP_DEFINE_GLOBAL, global);
+}
 
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
@@ -67,7 +105,38 @@ void Compiler::print_statement() {
   emit_byte(OP_PRINT);
 }
 
+void Compiler::expression_statement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expected ';' after an expression");
+  emit_byte(OP_POP);
+}
+
 void Compiler::expression() { parse_precedence(PREC_COMMA); }
+
+void Compiler::syncronize() {
+  m_parser.panic_mode = false;
+
+  while (m_parser.current.type != TOKEN_EOF) {
+    if (m_parser.previous.type == TOKEN_SEMICOLON)
+      return;
+
+    switch (m_parser.current.type) {
+    case TOKEN_CLASS:
+    case TOKEN_FOR:
+    case TOKEN_IF:
+    case TOKEN_FUN:
+    case TOKEN_WHILE:
+    case TOKEN_VAR:
+    case TOKEN_PRINT:
+    case TOKEN_RETURN:
+      return;
+    default:
+      // do nothing
+    }
+  }
+
+  advance();
+}
 
 ParseRule &Compiler::get_rule(const TokenType type) { return m_rules[type]; }
 
@@ -83,6 +152,13 @@ void Compiler::string() {
   auto *string{allocate_string(m_vm, std::move(str))};
 
   emit_constant(Value{string});
+}
+
+void Compiler::variable() { named_variable(m_parser.previous); }
+
+void Compiler::named_variable(Token &name) {
+  std::uint8_t arg{identifier_constant(name)};
+  emit_bytes(OP_GET_GLOBAL, arg);
 }
 
 void Compiler::emit_constant(Value value) {
@@ -198,7 +274,7 @@ void Compiler::parse_precedence(Precedence precedence) {
   auto prefix_rule{get_rule(m_parser.previous.type).prefix};
 
   if (prefix_rule == nullptr) {
-    error("Expect expression.");
+    error(" Expect expression.");
     return;
   }
 

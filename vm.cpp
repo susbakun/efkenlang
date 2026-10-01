@@ -109,6 +109,26 @@ InterpretResult VM::run() {
       pop().print_value();
       std::println();
       break;
+    case OP_POP:
+      pop();
+      break;
+    case OP_DEFINE_GLOBAL: {
+      ObjString *name{read_string()};
+      m_globals.insert({name, peek(0)});
+      pop();
+      break;
+    }
+    case OP_GET_GLOBAL: {
+      ObjString *name{read_string()};
+      auto value{m_globals.find(name)};
+
+      if (value == m_globals.end()) {
+        runtime_error("Undefined variable '" + name->str + "'");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      push(value->second);
+      break;
+    }
 
     // binary
     case OP_EQUAL: {
@@ -173,6 +193,8 @@ Value VM::read_constant_long() {
 
   return m_chunk.get_constant(ind);
 }
+
+ObjString *VM::read_string() { return as_string(read_constant()); }
 
 void VM::concatenate_two_strings() {
   ObjString *b{as_string(pop())};

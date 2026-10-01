@@ -5,6 +5,7 @@
 #include "value.hpp"
 #include <array>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
@@ -35,6 +36,7 @@ private:
   std::uint8_t read_byte();
   Value read_constant();
   Value read_constant_long();
+  ObjString *read_string();
   void concatenate_two_strings();
   void concatenate_string_and_number();
   ObjString *take_string(std::string str);
@@ -49,4 +51,5 @@ private:
   std::array<Value, STACK_MAX> m_stack{};
   Value *m_sp{m_stack.data()};
   std::unordered_map<std::string, ObjString *> m_strings{};
+  std::unordered_map<ObjString *, Value> m_globals{};
 };

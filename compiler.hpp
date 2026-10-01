@@ -51,13 +51,22 @@ public:
   bool check(TokenType type);
 
   void declaration();
+  void var_declration();
+  std::uint8_t parse_variable(const std::string_view error_message);
+  std::uint8_t identifier_constant(Token &name);
+  void define_variable(std::uint8_t global);
   void statement();
   void print_statement();
+  void expression_statement();
   void expression();
+
+  void syncronize();
 
   ParseRule &get_rule(const TokenType type);
   void number();
   void string();
+  void variable();
+  void named_variable(Token &name);
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
@@ -101,7 +110,7 @@ private:
       {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_GREATER_EQUAL
       {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS
       {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS_EQUAL
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_IDENTIFIER
+      {&Compiler::variable, nullptr, PREC_NONE},        // TOKEN_IDENTIFIER
       {&Compiler::string, nullptr, PREC_NONE},          // TOKEN_STRING
       {&Compiler::number, nullptr, PREC_NONE},          // TOKEN_NUMBER
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_AND

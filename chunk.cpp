@@ -32,7 +32,7 @@ void Chunk::write_constant(Value value, int line) {
   }
 }
 
-int Chunk::add_constant(Value value) {
+std::uint8_t Chunk::add_constant(Value value) {
   m_constants.write_value(value);
   return constants_size() - 1;
 }

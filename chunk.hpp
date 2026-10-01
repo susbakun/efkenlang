@@ -14,7 +14,11 @@ enum OpCode : std::uint8_t {
 
   OP_NOT,
   OP_NEGATE,
+
   OP_PRINT,
+  OP_POP,
+  OP_DEFINE_GLOBAL,
+  OP_GET_GLOBAL,
 
   // binary
   OP_EQUAL,
@@ -38,7 +42,7 @@ public:
 
   void write_chunk(std::uint8_t byte, int line);
   void write_constant(Value value, int line);
-  int add_constant(Value value);
+  std::uint8_t add_constant(Value value);
 
   std::uint8_t get_code(const std::size_t offset) const;
   Value get_constant(const std::size_t offset) const;
