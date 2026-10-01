@@ -105,6 +105,11 @@ InterpretResult VM::run() {
       m_sp[-1] = Value{-m_sp[-1].as_number()};
       break;
 
+    case OP_PRINT:
+      pop().print_value();
+      std::println();
+      break;
+
     // binary
     case OP_EQUAL: {
       auto v1{pop()};
@@ -150,8 +155,6 @@ InterpretResult VM::run() {
       break;
 
     case OP_RETURN:
-      pop().print_value();
-      std::println();
       return INTERPRET_OK;
     }
   }

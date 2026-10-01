@@ -14,20 +14,12 @@
 
 bool Compiler::compile() {
   advance();
-  expression();
-  consume(TOKEN_EOF, "Expect end of expression");
+  while (!match(TOKEN_EOF)) {
+    declaration();
+  }
   end_compiler();
 
   return !m_parser.had_error;
-}
-
-void Compiler::consume(const TokenType type, const std::string_view message) {
-  if (m_parser.current.type == type) {
-    advance();
-    return;
-  }
-
-  error_at_current(message);
 }
 
 void Compiler::advance() {
@@ -40,6 +32,39 @@ void Compiler::advance() {
 
     error_at_current(m_parser.current.start);
   }
+}
+
+void Compiler::consume(const TokenType type, const std::string_view message) {
+  if (check(type)) {
+    advance();
+    return;
+  }
+
+  error_at_current(message);
+}
+
+bool Compiler::match(TokenType type) {
+  if (!check(type))
+    return false;
+
+  advance();
+  return true;
+}
+
+bool Compiler::check(TokenType type) { return m_parser.current.type == type; }
+
+void Compiler::declaration() { statement(); }
+
+void Compiler::statement() {
+  if (match(TOKEN_PRINT)) {
+    print_statement();
+  }
+}
+
+void Compiler::print_statement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expected ';' after a print statement.");
+  emit_byte(OP_PRINT);
 }
 
 void Compiler::expression() { parse_precedence(PREC_COMMA); }

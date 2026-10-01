@@ -45,9 +45,16 @@ public:
       : m_vm{vm}, m_scanner{source}, m_compiling_chunk{chunk} {}
 
   bool compile();
-  void consume(const TokenType type, const std::string_view message);
   void advance();
+  void consume(const TokenType type, const std::string_view message);
+  bool match(TokenType type);
+  bool check(TokenType type);
+
+  void declaration();
+  void statement();
+  void print_statement();
   void expression();
+
   ParseRule &get_rule(const TokenType type);
   void number();
   void string();

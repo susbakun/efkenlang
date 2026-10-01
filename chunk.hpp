@@ -14,6 +14,7 @@ enum OpCode : std::uint8_t {
 
   OP_NOT,
   OP_NEGATE,
+  OP_PRINT,
 
   // binary
   OP_EQUAL,

@@ -39,6 +39,8 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
     return simple_instruction("OP_NEGATE", offset);
   case OP_NOT:
     return simple_instruction("OP_NOT", offset);
+  case OP_PRINT:
+    return simple_instruction("OP_PRINT", offset);
 
     // binary
   case OP_EQUAL:
