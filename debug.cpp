@@ -1,6 +1,7 @@
 #include "debug.hpp"
 #include "chunk.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <print>
 
 void disassemble_chunk(Chunk &chunk, const std::string_view name) {
@@ -44,12 +45,18 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
     return simple_instruction("OP_PRINT", offset);
   case OP_POP:
     return simple_instruction("OP_POP", offset);
+  case OP_POPN:
+    return constant_instruction("OP_POPN", chunk, offset);
   case OP_DEFINE_GLOBAL:
     return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
   case OP_GET_GLOBAL:
     return constant_instruction("OP_GET_GLOBAL", chunk, offset);
   case OP_SET_GLOBAL:
     return constant_instruction("OP_SET_GLOBAL", chunk, offset);
+  case OP_GET_LOCAL:
+    return byte_instruction("OP_GET_LOCAL", chunk, offset);
+  case OP_SET_LOCAL:
+    return byte_instruction("OP_SET_LOCAL", chunk, offset);
 
     // binary
   case OP_EQUAL:
@@ -107,6 +114,13 @@ std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
   chunk.get_constant(constant).print_value();
   std::println();
   return offset + 4;
+}
+
+std::size_t byte_instruction(const std::string_view name, Chunk &chunk,
+                             std::size_t offset) {
+  std::uint8_t slot{chunk.get_code(offset + 1)};
+  std::println("{:16} {:4}", name, slot);
+  return offset + 2;
 }
 
 int lookup_line(const Chunk &chunk, std::size_t offset) {

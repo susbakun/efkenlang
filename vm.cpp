@@ -112,6 +112,11 @@ InterpretResult VM::run() {
     case OP_POP:
       pop();
       break;
+    case OP_POPN: {
+      auto n{static_cast<int>(read_constant().as_number())};
+      pop(n);
+      break;
+    }
     case OP_DEFINE_GLOBAL: {
       ObjString *name{read_string()};
       m_globals[name] = peek(0);
@@ -138,6 +143,17 @@ InterpretResult VM::run() {
 
       m_globals[name] = peek(0);
 
+      break;
+    }
+
+    case OP_GET_LOCAL: {
+      auto slot{read_byte()};
+      push(m_stack[slot]);
+      break;
+    }
+    case OP_SET_LOCAL: {
+      auto slot{read_byte()};
+      m_stack[slot] = peek(0);
       break;
     }
 
@@ -245,6 +261,13 @@ void VM::push(Value value) {
 
 Value VM::pop() {
   m_sp--;
+  return *m_sp;
+}
+
+Value VM::pop(int n) {
+  for (std::size_t i{}; i < n; i++) {
+    m_sp--;
+  }
   return *m_sp;
 }
 

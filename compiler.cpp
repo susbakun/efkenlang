@@ -93,21 +93,6 @@ std::uint8_t Compiler::parse_variable(const std::string_view error_message) {
   return identifier_constant(m_parser.previous);
 }
 
-std::uint8_t Compiler::identifier_constant(Token &name) {
-  ObjString *obj_name{
-      allocate_string(m_vm, std::string(name.start, name.length))};
-
-  // we check if we already encountered the
-  // variable's name
-  if (m_variables_index.contains(obj_name))
-    return m_variables_index[obj_name];
-
-  auto ind{m_compiling_chunk.add_constant(obj_name)};
-  m_variables_index[obj_name] = ind;
-
-  return ind;
-}
-
 void Compiler::declare_variable() {
   if (m_scope_depth == 0)
     return;
@@ -127,11 +112,30 @@ void Compiler::declare_variable() {
   add_local(name);
 }
 
+void Compiler::mark_as_initilized() {
+  m_locals[m_local_count - 1].depth = m_scope_depth;
+}
+
+std::uint8_t Compiler::identifier_constant(Token &name) {
+  ObjString *obj_name{
+      allocate_string(m_vm, std::string(name.start, name.length))};
+
+  // we check if we already encountered the
+  // variable's name
+  if (m_variables_index.contains(obj_name))
+    return m_variables_index[obj_name];
+
+  auto ind{m_compiling_chunk.add_constant(obj_name)};
+  m_variables_index[obj_name] = ind;
+
+  return ind;
+}
+
 bool Compiler::identifiers_equal(Token &name1, Token &name2) {
   if (name1.length != name2.length)
     return false;
 
-  return std::memcmp(name1.start, name2.start, name1.length);
+  return std::memcmp(name1.start, name2.start, name1.length) == 0;
 }
 
 void Compiler::add_local(Token &name) {
@@ -140,8 +144,10 @@ void Compiler::add_local(Token &name) {
     return;
   }
 
+  std::println("name here: {}", std::string(name.start, name.length));
+
   Local local{};
-  local.depth = m_scope_depth;
+  local.depth = -1;
   local.name = name;
 
   m_locals[m_local_count++] = local;
@@ -149,8 +155,10 @@ void Compiler::add_local(Token &name) {
 
 void Compiler::define_variable(std::uint8_t global) {
   // no need to emit_bytes for local variables
-  if (m_scope_depth > 0)
+  if (m_scope_depth > 0) {
+    mark_as_initilized();
     return;
+  }
 
   emit_bytes(OP_DEFINE_GLOBAL, global);
 }
@@ -186,11 +194,17 @@ void Compiler::block() {
 void Compiler::end_scope() {
   m_scope_depth--;
 
+  double n{0};
+
   while (m_local_count > 0 &&
          m_locals[m_local_count - 1].depth > m_scope_depth) {
-    emit_byte(OP_POP);
+    n++;
     m_local_count--;
   }
+
+  auto ind{m_compiling_chunk.add_constant(Value{n})};
+
+  emit_bytes(OP_POPN, ind);
 }
 
 void Compiler::expression_statement() {
@@ -247,14 +261,38 @@ void Compiler::variable(bool can_assign) {
 }
 
 void Compiler::named_variable(Token &name, bool can_assign) {
-  std::uint8_t arg{identifier_constant(name)};
+  std::uint8_t get_op, set_op;
+  int arg{resolve_local(name)};
+
+  if (arg != -1) {
+    get_op = OP_GET_LOCAL;
+    set_op = OP_SET_LOCAL;
+  } else {
+    arg = identifier_constant(name);
+    get_op = OP_GET_GLOBAL;
+    set_op = OP_SET_GLOBAL;
+  }
 
   if (can_assign && match(TOKEN_EQUAL)) {
     expression();
-    emit_bytes(OP_SET_GLOBAL, arg);
+    emit_bytes(set_op, static_cast<std::uint8_t>(arg));
   } else {
-    emit_bytes(OP_GET_GLOBAL, arg);
+    emit_bytes(get_op, static_cast<std::uint8_t>(arg));
   }
+}
+
+int Compiler::resolve_local(Token &name) {
+  for (int i{m_local_count - 1}; i >= 0; i--) {
+
+    if (identifiers_equal(name, m_locals[i].name)) {
+      if (m_locals[i].depth == -1) {
+        error("Can't read local variables in its own initilizer");
+      }
+      return i;
+    }
+  }
+
+  return -1;
 }
 
 void Compiler::emit_constant(Value value) {

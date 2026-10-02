@@ -23,15 +23,16 @@ public:
 
   InterpretResult interpret(const std::string_view source);
 
-  void push(Value value);
-  Value pop();
-  Value peek(int distance);
-
   void add_string(std::string key, ObjString *value);
   std::optional<Value> find_string(const std::string &key);
 
 private:
   InterpretResult run();
+
+  void push(Value value);
+  Value pop();
+  Value pop(int n);
+  Value peek(int distance);
 
   std::uint8_t read_byte();
   Value read_constant();

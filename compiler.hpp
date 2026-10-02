@@ -61,8 +61,9 @@ private:
   void declaration();
   void var_declration();
   std::uint8_t parse_variable(const std::string_view error_message);
-  std::uint8_t identifier_constant(Token &name);
   void declare_variable();
+  void mark_as_initilized();
+  std::uint8_t identifier_constant(Token &name);
   bool identifiers_equal(Token &name1, Token &name2);
 
   void add_local(Token &name);
@@ -82,6 +83,7 @@ private:
   void string(bool can_assign);
   void variable(bool can_assign);
   void named_variable(Token &name, bool can_assign);
+  int resolve_local(Token &name);
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
