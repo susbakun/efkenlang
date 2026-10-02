@@ -44,6 +44,7 @@ enum TokenType {
   TOKEN_THIS,
   TOKEN_TRUE,
   TOKEN_VAR,
+  TOKEN_CONST,
   TOKEN_WHILE,
 
   TOKEN_ERROR,

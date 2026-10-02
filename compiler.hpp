@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 
 struct Parser {
@@ -42,9 +43,15 @@ struct ParseRule {
   Precedence precedence;
 };
 
+struct Global {
+  std::uint8_t slot;
+  bool is_const;
+};
+
 struct Local {
   Token name;
   int depth{};
+  bool is_const;
 };
 
 class Compiler {
@@ -61,14 +68,16 @@ private:
   bool check(TokenType type);
 
   void declaration();
-  void var_declration();
-  std::uint8_t parse_variable(const std::string_view error_message);
-  void declare_variable();
+  void var_declration(bool is_const);
+  std::uint8_t parse_variable(const std::string_view error_message,
+                              bool is_const);
+  void declare_variable(bool is_const);
   void mark_as_initilized();
-  std::uint8_t identifier_constant(Token &name);
+  std::tuple<std::uint8_t, bool> identifier_constant(Token &name,
+                                                     bool is_const);
   bool identifiers_equal(Token &name1, Token &name2);
 
-  void add_local(Token &name);
+  void add_local(Token &name, bool is_const);
   void define_variable(std::uint8_t global);
   void statement();
   void print_statement();
@@ -85,7 +94,7 @@ private:
   void string(bool can_assign);
   void variable(bool can_assign);
   void named_variable(Token &name, bool can_assign);
-  int resolve_local(Token &name);
+  std::tuple<int, bool> resolve_local(Token &name);
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
@@ -107,13 +116,13 @@ private:
   Scanner m_scanner;
   Parser m_parser{};
   Chunk &m_compiling_chunk;
-  std::unordered_map<ObjString *, std::uint8_t> m_variables_index{};
+  std::unordered_map<ObjString *, Global> m_variables_index{};
   std::array<Local, UINT8_COUNT> m_locals{};
   int m_scope_depth{};
   int m_local_count{};
   std::unordered_map<std::string, std::uint8_t> m_local_slots{};
 
-  std::array<ParseRule, 40> m_rules{{
+  std::array<ParseRule, 41> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_RIGHT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_LEFT_BRACE
@@ -151,6 +160,7 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_THIS
       {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_TRUE
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_VAR
+      {nullptr, nullptr, PREC_NONE},                    // TOKEN_CONST
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_WHILE
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_ERROR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_EOF

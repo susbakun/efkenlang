@@ -142,7 +142,15 @@ TokenType Scanner::identifier_type() {
   case 'a':
     return check_type(1, 2, "nd", TOKEN_AND);
   case 'c':
-    return check_type(1, 4, "lass", TOKEN_CLASS);
+    if (m_current - m_start > 1) {
+      switch (m_start[1]) {
+      case 'l':
+        return check_type(2, 3, "ass", TOKEN_CLASS);
+      case 'o':
+        return check_type(2, 3, "nst", TOKEN_CONST);
+      }
+    }
+    break;
   case 'e':
     return check_type(1, 3, "lse", TOKEN_ELSE);
   case 'i':

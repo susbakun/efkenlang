@@ -11,6 +11,7 @@
 #include <print>
 #include <string>
 #include <string_view>
+#include <tuple>
 
 #define DEBUG_PRINT_CODE
 
@@ -57,7 +58,9 @@ bool Compiler::check(TokenType type) { return m_parser.current.type == type; }
 
 void Compiler::declaration() {
   if (match(TOKEN_VAR)) {
-    var_declration();
+    var_declration(false);
+  } else if (match(TOKEN_CONST)) {
+    var_declration(true);
   } else {
     statement();
   }
@@ -66,12 +69,15 @@ void Compiler::declaration() {
     syncronize();
 }
 
-void Compiler::var_declration() {
-  std::uint8_t global{parse_variable("Expect variable name")};
+void Compiler::var_declration(bool is_const) {
+  std::uint8_t global{parse_variable("Expect variable name", is_const)};
 
   if (match(TOKEN_EQUAL)) {
     expression();
   } else {
+    if (is_const) {
+      error("Const variables must be initilized.");
+    }
     emit_byte(OP_NIL);
   }
   consume(TOKEN_SEMICOLON, "Expect ';' after varialbe declration.");
@@ -79,10 +85,11 @@ void Compiler::var_declration() {
   define_variable(global);
 }
 
-std::uint8_t Compiler::parse_variable(const std::string_view error_message) {
+std::uint8_t Compiler::parse_variable(const std::string_view error_message,
+                                      bool is_const) {
   consume(TOKEN_IDENTIFIER, error_message);
 
-  declare_variable();
+  declare_variable(is_const);
   // when we're in a local scope
   // don't need to store the variable's name
   // in the constant table of the chunk
@@ -90,10 +97,11 @@ std::uint8_t Compiler::parse_variable(const std::string_view error_message) {
   if (m_scope_depth > 0)
     return 0;
 
-  return identifier_constant(m_parser.previous);
+  // just return the index
+  return std::get<0>(identifier_constant(m_parser.previous, is_const));
 }
 
-void Compiler::declare_variable() {
+void Compiler::declare_variable(bool is_const) {
   if (m_scope_depth == 0)
     return;
 
@@ -109,26 +117,28 @@ void Compiler::declare_variable() {
     }
   }
 
-  add_local(name);
+  add_local(name, is_const);
 }
 
 void Compiler::mark_as_initilized() {
   m_locals[m_local_count - 1].depth = m_scope_depth;
 }
 
-std::uint8_t Compiler::identifier_constant(Token &name) {
+std::tuple<std::uint8_t, bool>
+Compiler::identifier_constant(Token &name, bool is_const = false) {
   ObjString *obj_name{
       allocate_string(m_vm, std::string(name.start, name.length))};
 
   // we check if we already encountered the
   // variable's name
   if (m_variables_index.contains(obj_name))
-    return m_variables_index[obj_name];
+    return std::make_tuple(m_variables_index[obj_name].slot,
+                           m_variables_index[obj_name].is_const);
 
   auto ind{m_compiling_chunk.add_constant(obj_name)};
-  m_variables_index[obj_name] = ind;
+  m_variables_index[obj_name] = {ind, is_const};
 
-  return ind;
+  return std::make_tuple(ind, is_const);
 }
 
 bool Compiler::identifiers_equal(Token &name1, Token &name2) {
@@ -138,7 +148,7 @@ bool Compiler::identifiers_equal(Token &name1, Token &name2) {
   return std::memcmp(name1.start, name2.start, name1.length) == 0;
 }
 
-void Compiler::add_local(Token &name) {
+void Compiler::add_local(Token &name, bool is_const) {
   if (m_local_count == UINT8_COUNT) {
     error("Too many local variables in function.");
     return;
@@ -147,6 +157,7 @@ void Compiler::add_local(Token &name) {
   Local local{};
   local.depth = -1;
   local.name = name;
+  local.is_const = is_const;
 
   auto name_str{std::string(name.start, name.length)};
 
@@ -263,9 +274,9 @@ void Compiler::variable(bool can_assign) {
 
 void Compiler::named_variable(Token &name, bool can_assign) {
   std::uint8_t get_op, set_op;
-  int arg{resolve_local(name)};
+  auto arg{resolve_local(name)};
 
-  if (arg != -1) {
+  if (std::get<0>(arg) != -1) {
     get_op = OP_GET_LOCAL;
     set_op = OP_SET_LOCAL;
   } else {
@@ -275,26 +286,29 @@ void Compiler::named_variable(Token &name, bool can_assign) {
   }
 
   if (can_assign && match(TOKEN_EQUAL)) {
+    if (std::get<1>(arg)) {
+      error("Cannot reassign to const vairables");
+    }
     expression();
-    emit_bytes(set_op, static_cast<std::uint8_t>(arg));
+    emit_bytes(set_op, static_cast<std::uint8_t>(std::get<0>(arg)));
   } else {
-    emit_bytes(get_op, static_cast<std::uint8_t>(arg));
+    emit_bytes(get_op, static_cast<std::uint8_t>(std::get<0>(arg)));
   }
 }
 
-int Compiler::resolve_local(Token &name) {
+std::tuple<int, bool> Compiler::resolve_local(Token &name) {
   auto name_str{std::string(name.start, name.length)};
   auto it{m_local_slots.find(name_str)};
 
   if (it == m_local_slots.end())
-    return -1;
+    return std::make_tuple(-1, false);
 
   auto index{it->second};
   if (m_locals[index].depth == -1) {
     error("Can't read local variables in its own initilizer");
   }
 
-  return index;
+  return std::make_tuple(index, m_locals[index].is_const);
 }
 
 void Compiler::emit_constant(Value value) {
@@ -456,6 +470,6 @@ void Compiler::error_at(Token &token, const std::string_view message) {
     std::print(std::cerr, " at '{}'", lexeme);
   }
 
-  std::println(std::cerr, "{}", message);
+  std::println(std::cerr, " {}", message);
   m_parser.had_error = true;
 }
