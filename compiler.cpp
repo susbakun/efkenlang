@@ -144,12 +144,13 @@ void Compiler::add_local(Token &name) {
     return;
   }
 
-  std::println("name here: {}", std::string(name.start, name.length));
-
   Local local{};
   local.depth = -1;
   local.name = name;
 
+  auto name_str{std::string(name.start, name.length)};
+
+  m_local_slots.insert({name_str, m_local_count});
   m_locals[m_local_count++] = local;
 }
 
@@ -282,17 +283,18 @@ void Compiler::named_variable(Token &name, bool can_assign) {
 }
 
 int Compiler::resolve_local(Token &name) {
-  for (int i{m_local_count - 1}; i >= 0; i--) {
+  auto name_str{std::string(name.start, name.length)};
+  auto it{m_local_slots.find(name_str)};
 
-    if (identifiers_equal(name, m_locals[i].name)) {
-      if (m_locals[i].depth == -1) {
-        error("Can't read local variables in its own initilizer");
-      }
-      return i;
-    }
+  if (it == m_local_slots.end())
+    return -1;
+
+  auto index{it->second};
+  if (m_locals[index].depth == -1) {
+    error("Can't read local variables in its own initilizer");
   }
 
-  return -1;
+  return index;
 }
 
 void Compiler::emit_constant(Value value) {

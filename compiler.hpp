@@ -6,7 +6,9 @@
 #include "vm.hpp"
 #include <array>
 #include <cstdint>
+#include <string>
 #include <string_view>
+#include <unordered_map>
 
 struct Parser {
   Token current;
@@ -109,6 +111,7 @@ private:
   std::array<Local, UINT8_COUNT> m_locals{};
   int m_scope_depth{};
   int m_local_count{};
+  std::unordered_map<std::string, std::uint8_t> m_local_slots{};
 
   std::array<ParseRule, 40> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
