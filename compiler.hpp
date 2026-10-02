@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chunk.hpp"
+#include "common.hpp"
 #include "scanner.hpp"
 #include "vm.hpp"
 #include <array>
@@ -39,12 +40,19 @@ struct ParseRule {
   Precedence precedence;
 };
 
+struct Local {
+  Token name;
+  int depth{};
+};
+
 class Compiler {
 public:
   Compiler(VM &vm, const std::string_view source, Chunk &chunk)
       : m_vm{vm}, m_scanner{source}, m_compiling_chunk{chunk} {}
 
   bool compile();
+
+private:
   void advance();
   void consume(const TokenType type, const std::string_view message);
   bool match(TokenType type);
@@ -54,9 +62,16 @@ public:
   void var_declration();
   std::uint8_t parse_variable(const std::string_view error_message);
   std::uint8_t identifier_constant(Token &name);
+  void declare_variable();
+  bool identifiers_equal(Token &name1, Token &name2);
+
+  void add_local(Token &name);
   void define_variable(std::uint8_t global);
   void statement();
   void print_statement();
+  void begin_scope();
+  void block();
+  void end_scope();
   void expression_statement();
   void expression();
 
@@ -84,12 +99,14 @@ public:
   void error(const std::string_view message);
   void error_at(Token &token, const std::string_view message);
 
-private:
   VM &m_vm;
   Scanner m_scanner;
   Parser m_parser{};
   Chunk &m_compiling_chunk;
   std::unordered_map<ObjString *, std::uint8_t> m_variables_index{};
+  std::array<Local, UINT8_COUNT> m_locals{};
+  int m_scope_depth{};
+  int m_local_count{};
 
   std::array<ParseRule, 40> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN

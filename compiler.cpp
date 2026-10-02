@@ -1,10 +1,12 @@
 #include "compiler.hpp"
 #include "chunk.hpp"
+#include "common.hpp"
 #include "debug.hpp"
 #include "obj.hpp"
 #include "scanner.hpp"
 #include "value.hpp"
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <print>
 #include <string>
@@ -79,6 +81,15 @@ void Compiler::var_declration() {
 
 std::uint8_t Compiler::parse_variable(const std::string_view error_message) {
   consume(TOKEN_IDENTIFIER, error_message);
+
+  declare_variable();
+  // when we're in a local scope
+  // don't need to store the variable's name
+  // in the constant table of the chunk
+  // so we just return a dummy index
+  if (m_scope_depth > 0)
+    return 0;
+
   return identifier_constant(m_parser.previous);
 }
 
@@ -97,13 +108,60 @@ std::uint8_t Compiler::identifier_constant(Token &name) {
   return ind;
 }
 
+void Compiler::declare_variable() {
+  if (m_scope_depth == 0)
+    return;
+
+  auto name{m_parser.previous};
+
+  for (int i{m_local_count - 1}; i >= 0; i--) {
+    if (m_locals[i].depth != -1 && m_locals[i].depth < m_scope_depth)
+      break;
+
+    if (identifiers_equal(name, m_locals[i].name)) {
+      error("Already declared variable with the name " +
+            std::string(name.start, name.length) + " in the scope.");
+    }
+  }
+
+  add_local(name);
+}
+
+bool Compiler::identifiers_equal(Token &name1, Token &name2) {
+  if (name1.length != name2.length)
+    return false;
+
+  return std::memcmp(name1.start, name2.start, name1.length);
+}
+
+void Compiler::add_local(Token &name) {
+  if (m_local_count == UINT8_COUNT) {
+    error("Too many local variables in function.");
+    return;
+  }
+
+  Local local{};
+  local.depth = m_scope_depth;
+  local.name = name;
+
+  m_locals[m_local_count++] = local;
+}
+
 void Compiler::define_variable(std::uint8_t global) {
+  // no need to emit_bytes for local variables
+  if (m_scope_depth > 0)
+    return;
+
   emit_bytes(OP_DEFINE_GLOBAL, global);
 }
 
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
     print_statement();
+  } else if (match(TOKEN_LEFT_BRACE)) {
+    begin_scope();
+    block();
+    end_scope();
   } else {
     expression_statement();
   }
@@ -113,6 +171,26 @@ void Compiler::print_statement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expected ';' after a print statement.");
   emit_byte(OP_PRINT);
+}
+
+void Compiler::begin_scope() { m_scope_depth++; }
+
+void Compiler::block() {
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    declaration();
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after a block statement.");
+}
+
+void Compiler::end_scope() {
+  m_scope_depth--;
+
+  while (m_local_count > 0 &&
+         m_locals[m_local_count - 1].depth > m_scope_depth) {
+    emit_byte(OP_POP);
+    m_local_count--;
+  }
 }
 
 void Compiler::expression_statement() {
