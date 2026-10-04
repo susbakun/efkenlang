@@ -107,6 +107,7 @@ private:
   void grouping(bool can_assign);
   void unary(bool can_assign);
   void binary(bool can_assign);
+  void _and(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
@@ -148,7 +149,7 @@ private:
       {&Compiler::variable, nullptr, PREC_NONE},        // TOKEN_IDENTIFIER
       {&Compiler::string, nullptr, PREC_NONE},          // TOKEN_STRING
       {&Compiler::number, nullptr, PREC_NONE},          // TOKEN_NUMBER
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_AND
+      {nullptr, &Compiler::_and, PREC_AND},             // TOKEN_AND
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_CLASS
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_ELSE
       {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_FALSE

@@ -444,6 +444,14 @@ void Compiler::binary(bool can_assign) {
   }
 }
 
+void Compiler::_and(bool can_assign) {
+  int end_jump{emit_jump(OP_JUMP_IF_FALSE)};
+  emit_byte(OP_POP);
+
+  parse_precedence(PREC_AND);
+  patch_jump(end_jump);
+}
+
 void Compiler::literal(bool can_assign) {
   switch (m_parser.previous.type) {
   case TOKEN_FALSE:
