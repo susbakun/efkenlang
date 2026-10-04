@@ -452,6 +452,17 @@ void Compiler::_and(bool can_assign) {
   patch_jump(end_jump);
 }
 
+void Compiler::_or(bool can_assign) {
+  int else_jump{emit_jump(OP_JUMP_IF_FALSE)};
+  int end_jump{emit_jump(OP_JUMP)};
+
+  patch_jump(else_jump);
+  emit_byte(OP_POP);
+
+  parse_precedence(PREC_OR);
+  patch_jump(end_jump);
+}
+
 void Compiler::literal(bool can_assign) {
   switch (m_parser.previous.type) {
   case TOKEN_FALSE:

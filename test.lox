@@ -1,4 +1,7 @@
-if (true){
+var a = true;
+var b = false;
+
+if (a or b) {
     print 2;
 } else {
     print 3;

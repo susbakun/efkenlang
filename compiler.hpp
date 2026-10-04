@@ -108,6 +108,7 @@ private:
   void unary(bool can_assign);
   void binary(bool can_assign);
   void _and(bool can_assign);
+  void _or(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
@@ -157,7 +158,7 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_FUN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_IF
       {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_NIL
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_OR
+      {nullptr, &Compiler::_or, PREC_OR},               // TOKEN_OR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_PRINT
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_RETURN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_SUPER

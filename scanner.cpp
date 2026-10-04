@@ -173,7 +173,7 @@ TokenType Scanner::identifier_type() {
     if (m_current - m_start > 1) {
       switch (m_start[1]) {
       case 'a':
-        return check_type(2, 4, "lse", TOKEN_FALSE);
+        return check_type(2, 3, "lse", TOKEN_FALSE);
       case 'o':
         return check_type(2, 1, "r", TOKEN_FOR);
       case 'u':
