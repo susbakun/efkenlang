@@ -24,6 +24,9 @@ enum OpCode : std::uint8_t {
   OP_GET_LOCAL,
   OP_SET_LOCAL,
 
+  OP_JUMP_IF_FALSE,
+  OP_JUMP,
+
   // binary
   OP_EQUAL,
   OP_GREATER,

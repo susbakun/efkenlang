@@ -37,6 +37,7 @@ private:
   std::uint8_t read_byte();
   Value read_constant();
   Value read_constant_long();
+  std::uint16_t read_short();
   ObjString *read_string();
   void concatenate_two_strings();
   void concatenate_string_and_number();

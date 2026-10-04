@@ -14,4 +14,6 @@ std::size_t constant_long_instruction(const std::string_view name, Chunk &chunk,
                                       std::size_t offset);
 std::size_t byte_instruction(const std::string_view name, Chunk &chunk,
                              std::size_t offset);
+std::size_t jump_instruction(const std::string_view name, int sign,
+                             Chunk &chunk, int offset);
 int lookup_line(const Chunk &chunk, std::size_t offset);

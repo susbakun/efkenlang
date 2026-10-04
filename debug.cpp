@@ -58,6 +58,11 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
   case OP_SET_LOCAL:
     return byte_instruction("OP_SET_LOCAL", chunk, offset);
 
+  case OP_JUMP:
+    return jump_instruction("OP_JUMP", 1, chunk, offset);
+  case OP_JUMP_IF_FALSE:
+    return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
+
     // binary
   case OP_EQUAL:
     return simple_instruction("OP_EQUAL", offset);
@@ -121,6 +126,16 @@ std::size_t byte_instruction(const std::string_view name, Chunk &chunk,
   std::uint8_t slot{chunk.get_code(offset + 1)};
   std::println("{:16} {:4}", name, slot);
   return offset + 2;
+}
+
+std::size_t jump_instruction(const std::string_view name, int sign,
+                             Chunk &chunk, int offset) {
+  std::uint16_t jump{
+      static_cast<std::uint16_t>(chunk.get_code_ref(offset + 1) << 8)};
+  jump |= chunk.get_code_ref(offset + 2);
+
+  std::println("{:16} {:4} -> {}", name, offset, offset + 3 + sign * jump);
+  return offset + 3;
 }
 
 int lookup_line(const Chunk &chunk, std::size_t offset) {

@@ -178,6 +178,8 @@ void Compiler::define_variable(std::uint8_t global) {
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
     print_statement();
+  } else if (match(TOKEN_IF)) {
+    if_statement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     begin_scope();
     block();
@@ -191,6 +193,26 @@ void Compiler::print_statement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expected ';' after a print statement.");
   emit_byte(OP_PRINT);
+}
+
+void Compiler::if_statement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int then_jump{emit_jump(OP_JUMP_IF_FALSE)};
+  emit_byte(OP_POP);
+  statement();
+
+  int else_jump = emit_jump(OP_JUMP);
+
+  patch_jump(then_jump);
+  emit_byte(OP_POP);
+
+  if (match(TOKEN_ELSE)) {
+    statement();
+    patch_jump(else_jump);
+  }
 }
 
 void Compiler::begin_scope() { m_scope_depth++; }
@@ -332,6 +354,25 @@ void Compiler::end_compiler() {
     disassemble_chunk(m_compiling_chunk, "code");
   }
 #endif
+}
+
+int Compiler::emit_jump(std::uint8_t instruction) {
+  emit_byte(instruction);
+  emit_byte(0xff);
+  emit_byte(0xff);
+  return m_compiling_chunk.code_size() - 2;
+}
+
+void Compiler::patch_jump(int offset) {
+  // -2 to adjust for the bytecode for the jump offset itself.
+  int jump{static_cast<int>(m_compiling_chunk.code_size()) - offset - 2};
+
+  if (jump > UINT16_MAX) {
+    error("Too much code to jump over.");
+  }
+
+  m_compiling_chunk.get_code_ref(offset) = (jump >> 8) & 0xff;
+  m_compiling_chunk.get_code_ref(offset + 1) = jump & 0xff;
 }
 
 void Compiler::emit_return() { emit_byte(OP_RETURN); }

@@ -81,6 +81,7 @@ private:
   void define_variable(std::uint8_t global);
   void statement();
   void print_statement();
+  void if_statement();
   void begin_scope();
   void block();
   void end_scope();
@@ -99,6 +100,8 @@ private:
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
   void end_compiler();
+  int emit_jump(std::uint8_t instruction);
+  void patch_jump(int offset);
   void emit_return();
 
   void grouping(bool can_assign);

@@ -157,6 +157,18 @@ InterpretResult VM::run() {
       break;
     }
 
+    case OP_JUMP_IF_FALSE: {
+      std::uint16_t offset{read_short()};
+      if (!peek(0).as_boolean())
+        m_ip += offset;
+      break;
+    }
+    case OP_JUMP: {
+      std::uint16_t offset{read_short()};
+      m_ip += offset;
+      break;
+    }
+
     // binary
     case OP_EQUAL: {
       auto v1{pop()};
@@ -219,6 +231,11 @@ Value VM::read_constant_long() {
   auto ind{(ind_first_byte << 16) + (ind_second_byte << 8) + ind_third_byte};
 
   return m_chunk.get_constant(ind);
+}
+
+std::uint16_t VM::read_short() {
+  m_ip += 2;
+  return (m_ip[-2] << 8) | m_ip[-1];
 }
 
 ObjString *VM::read_string() { return as_string(read_constant()); }
