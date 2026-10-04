@@ -26,6 +26,7 @@ enum OpCode : std::uint8_t {
 
   OP_JUMP_IF_FALSE,
   OP_JUMP,
+  OP_LOOP,
 
   // binary
   OP_EQUAL,

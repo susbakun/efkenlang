@@ -1,8 +1,6 @@
-var a = true;
-var b = false;
+var a = 5;
 
-if (a or b) {
-    print 2;
-} else {
-    print 3;
+while (a > 0) {
+    print a;
+    a = a - 1;
 }

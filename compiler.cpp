@@ -180,6 +180,8 @@ void Compiler::statement() {
     print_statement();
   } else if (match(TOKEN_IF)) {
     if_statement();
+  } else if (match(TOKEN_WHILE)) {
+    while_statement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     begin_scope();
     block();
@@ -213,6 +215,22 @@ void Compiler::if_statement() {
     statement();
     patch_jump(else_jump);
   }
+}
+
+void Compiler::while_statement() {
+  int loop_start{static_cast<int>(m_compiling_chunk.code_size())};
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
+
+  int exit_jump{emit_jump(OP_JUMP_IF_FALSE)};
+  emit_byte(OP_POP);
+  statement();
+  emit_loop(loop_start);
+
+  patch_jump(exit_jump);
+  emit_byte(OP_POP);
 }
 
 void Compiler::begin_scope() { m_scope_depth++; }
@@ -373,6 +391,17 @@ void Compiler::patch_jump(int offset) {
 
   m_compiling_chunk.get_code_ref(offset) = (jump >> 8) & 0xff;
   m_compiling_chunk.get_code_ref(offset + 1) = jump & 0xff;
+}
+
+void Compiler::emit_loop(int loop_start) {
+  emit_byte(OP_LOOP);
+
+  int offset{static_cast<int>(m_compiling_chunk.code_size()) - loop_start + 2};
+  if (offset > UINT16_MAX)
+    error("Loop body too large");
+
+  emit_byte((offset >> 8) & 0xff);
+  emit_byte(offset & 0xff);
 }
 
 void Compiler::emit_return() { emit_byte(OP_RETURN); }

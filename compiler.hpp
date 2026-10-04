@@ -82,6 +82,7 @@ private:
   void statement();
   void print_statement();
   void if_statement();
+  void while_statement();
   void begin_scope();
   void block();
   void end_scope();
@@ -101,7 +102,8 @@ private:
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
   void end_compiler();
   int emit_jump(std::uint8_t instruction);
-  void patch_jump(int offset);
+  void patch_jump(int loop_start);
+  void emit_loop(int offset);
   void emit_return();
 
   void grouping(bool can_assign);

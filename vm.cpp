@@ -168,6 +168,11 @@ InterpretResult VM::run() {
       m_ip += offset;
       break;
     }
+    case OP_LOOP: {
+      std::uint16_t offset{read_short()};
+      m_ip -= offset;
+      break;
+    }
 
     // binary
     case OP_EQUAL: {
