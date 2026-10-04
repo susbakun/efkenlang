@@ -83,6 +83,7 @@ private:
   void print_statement();
   void if_statement();
   void while_statement();
+  void for_statement();
   void begin_scope();
   void block();
   void end_scope();
