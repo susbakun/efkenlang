@@ -151,7 +151,14 @@ TokenType Scanner::identifier_type() {
       case 'l':
         return check_type(2, 3, "ass", TOKEN_CLASS);
       case 'o':
-        return check_type(2, 3, "nst", TOKEN_CONST);
+        if (m_start[2] == 'n') {
+          switch (m_start[3]) {
+          case 's':
+            return check_type(4, 1, "t", TOKEN_CONST);
+          case 't':
+            return check_type(4, 4, "inue", TOKEN_CONTINUE);
+          }
+        }
       }
     }
     break;

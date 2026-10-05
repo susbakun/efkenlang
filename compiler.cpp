@@ -292,6 +292,8 @@ void Compiler::switch_statement() {
 void Compiler::while_statement() {
   int loop_start{static_cast<int>(m_compiling_chunk.code_size())};
 
+  m_target_loops.push_back(loop_start);
+
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
@@ -303,6 +305,8 @@ void Compiler::while_statement() {
 
   patch_jump(exit_jump);
   emit_byte(OP_POP);
+
+  m_target_loops.pop_back();
 }
 
 void Compiler::for_statement() {
@@ -341,6 +345,8 @@ void Compiler::for_statement() {
     patch_jump(body_jump);
   }
 
+  m_target_loops.push_back(loop_start);
+
   statement();
   emit_loop(loop_start);
 
@@ -348,6 +354,8 @@ void Compiler::for_statement() {
     patch_jump(exit_jump);
     emit_byte(OP_POP);
   }
+
+  m_target_loops.pop_back();
 
   end_scope();
 }
@@ -609,6 +617,15 @@ void Compiler::_or(bool can_assign) {
 
   parse_precedence(PREC_OR);
   patch_jump(end_jump);
+}
+
+void Compiler::continue_stmt(bool can_assign) {
+  if (m_target_loops.empty()) {
+    error("Continue should be used inside a loop.");
+    return;
+  }
+  auto loop_target{m_target_loops.back()};
+  emit_loop(loop_target);
 }
 
 void Compiler::literal(bool can_assign) {

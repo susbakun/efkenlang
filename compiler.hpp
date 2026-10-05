@@ -10,6 +10,7 @@
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
+#include <vector>
 
 struct Parser {
   Token current;
@@ -113,6 +114,7 @@ private:
   void binary(bool can_assign);
   void _and(bool can_assign);
   void _or(bool can_assign);
+  void continue_stmt(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
@@ -130,8 +132,10 @@ private:
   int m_scope_depth{};
   int m_local_count{};
   std::unordered_map<std::string, std::uint8_t> m_local_slots{};
+  // kept for continue statements
+  std::vector<int> m_target_loops{};
 
-  std::array<ParseRule, 45> m_rules{{
+  std::array<ParseRule, 46> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_RIGHT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_LEFT_BRACE
@@ -175,6 +179,7 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_VAR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_CONST
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_WHILE
+      {&Compiler::continue_stmt, nullptr, PREC_NONE},   // TOKEN_CONTINUE
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_ERROR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_EOF
   }};

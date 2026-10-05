@@ -1,13 +1,7 @@
-var a = 8;
+for (var a = 2; a > 0; a = a - 1) {
+    if (a == 1) {
+        continue;
+    }
 
-switch(a) {
-    case 2:
-        print "Hello";
-    case 2:
-        print "hello 2";
-    default:
-        print "default";
-
+    print a;
 }
-
-print "after switch";
