@@ -292,7 +292,7 @@ void Compiler::switch_statement() {
 void Compiler::while_statement() {
   int loop_start{static_cast<int>(m_compiling_chunk.code_size())};
 
-  m_target_loops.push_back({loop_start, m_scope_depth});
+  m_target_loops.push_back({loop_start, m_scope_depth, {}});
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'");
   expression();
@@ -304,6 +304,13 @@ void Compiler::while_statement() {
   emit_loop(loop_start);
 
   patch_jump(exit_jump);
+
+  auto &loop{m_target_loops.back()};
+
+  for (auto &bj : loop.break_jumps) {
+    patch_jump(bj);
+  }
+
   emit_byte(OP_POP);
 
   m_target_loops.pop_back();
@@ -633,6 +640,20 @@ void Compiler::continue_stmt(bool can_assign) {
   discard_locals(loop.scope_depth);
 
   emit_loop(loop.target_loop);
+}
+
+void Compiler::break_stmt(bool can_assign) {
+  if (m_target_loops.empty()) {
+    error("Break should be used inside a loop.");
+    return;
+  }
+
+  auto &loop{m_target_loops.back()};
+
+  // remove the locals on loop
+  discard_locals(loop.scope_depth);
+
+  loop.break_jumps.push_back(emit_jump(OP_JUMP));
 }
 
 void Compiler::literal(bool can_assign) {

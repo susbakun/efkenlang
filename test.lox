@@ -5,8 +5,8 @@ while (a > 0){
 
     var b = 3;
 
-    if (a == 1) {
-        continue;
+    if (a == 0) {
+        break;
     }
 
     print "a: " + a;

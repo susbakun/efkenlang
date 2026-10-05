@@ -58,6 +58,7 @@ struct Local {
 struct Loop {
   int target_loop{};
   int scope_depth{};
+  std::vector<int> break_jumps{};
 };
 
 class Compiler {
@@ -121,6 +122,7 @@ private:
   void _and(bool can_assign);
   void _or(bool can_assign);
   void continue_stmt(bool can_assign);
+  void break_stmt(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
@@ -141,7 +143,7 @@ private:
   // kept for continue statements
   std::vector<Loop> m_target_loops{};
 
-  std::array<ParseRule, 46> m_rules{{
+  std::array<ParseRule, 47> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_RIGHT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_LEFT_BRACE
@@ -186,6 +188,7 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_CONST
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_WHILE
       {&Compiler::continue_stmt, nullptr, PREC_NONE},   // TOKEN_CONTINUE
+      {&Compiler::break_stmt, nullptr, PREC_NONE},      // TOKEN_BREAK
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_ERROR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_EOF
   }};

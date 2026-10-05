@@ -143,6 +143,8 @@ TokenType Scanner::identifier_type() {
   switch (*m_start) {
   case 'a':
     return check_type(1, 2, "nd", TOKEN_AND);
+  case 'b':
+    return check_type(1, 4, "reak", TOKEN_BREAK);
   case 'c':
     if (m_current - m_start > 1) {
       switch (m_start[1]) {
