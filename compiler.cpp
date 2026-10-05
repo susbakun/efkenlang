@@ -292,7 +292,7 @@ void Compiler::switch_statement() {
 void Compiler::while_statement() {
   int loop_start{static_cast<int>(m_compiling_chunk.code_size())};
 
-  m_target_loops.push_back(loop_start);
+  m_target_loops.push_back({loop_start, m_scope_depth});
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'");
   expression();
@@ -345,7 +345,7 @@ void Compiler::for_statement() {
     patch_jump(body_jump);
   }
 
-  m_target_loops.push_back(loop_start);
+  m_target_loops.push_back({loop_start, m_scope_depth});
 
   statement();
   emit_loop(loop_start);
@@ -373,10 +373,13 @@ void Compiler::block() {
 void Compiler::end_scope() {
   m_scope_depth--;
 
+  discard_locals(m_scope_depth);
+}
+
+void Compiler::discard_locals(int depth) {
   double n{0};
 
-  while (m_local_count > 0 &&
-         m_locals[m_local_count - 1].depth > m_scope_depth) {
+  while (m_local_count > 0 && m_locals[m_local_count - 1].depth > depth) {
     n++;
     m_local_count--;
   }
@@ -624,8 +627,12 @@ void Compiler::continue_stmt(bool can_assign) {
     error("Continue should be used inside a loop.");
     return;
   }
-  auto loop_target{m_target_loops.back()};
-  emit_loop(loop_target);
+  auto loop{m_target_loops.back()};
+
+  // remove the locals on loop
+  discard_locals(loop.scope_depth);
+
+  emit_loop(loop.target_loop);
 }
 
 void Compiler::literal(bool can_assign) {

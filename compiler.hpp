@@ -55,6 +55,11 @@ struct Local {
   bool is_const;
 };
 
+struct Loop {
+  int target_loop{};
+  int scope_depth{};
+};
+
 class Compiler {
 public:
   Compiler(VM &vm, const std::string_view source, Chunk &chunk)
@@ -89,6 +94,7 @@ private:
   void begin_scope();
   void block();
   void end_scope();
+  void discard_locals(int depth);
   void expression_statement();
   void expression();
 
@@ -133,7 +139,7 @@ private:
   int m_local_count{};
   std::unordered_map<std::string, std::uint8_t> m_local_slots{};
   // kept for continue statements
-  std::vector<int> m_target_loops{};
+  std::vector<Loop> m_target_loops{};
 
   std::array<ParseRule, 46> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN

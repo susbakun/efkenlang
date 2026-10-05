@@ -1,7 +1,14 @@
-for (var a = 2; a > 0; a = a - 1) {
+var a = 2;
+
+while (a > 0){
+    a = a - 1;
+
+    var b = 3;
+
     if (a == 1) {
         continue;
     }
 
-    print a;
+    print "a: " + a;
+    print "b: " + b;
 }
