@@ -28,6 +28,8 @@ enum OpCode : std::uint8_t {
   OP_JUMP,
   OP_LOOP,
 
+  OP_DUP,
+
   // binary
   OP_EQUAL,
   OP_GREATER,

@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <vector>
 
 #define DEBUG_PRINT_CODE
 
@@ -184,6 +185,8 @@ void Compiler::statement() {
     while_statement();
   } else if (match(TOKEN_FOR)) {
     for_statement();
+  } else if (match(TOKEN_SWITCH)) {
+    switch_statement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     begin_scope();
     block();
@@ -217,6 +220,53 @@ void Compiler::if_statement() {
     statement();
     patch_jump(else_jump);
   }
+}
+
+void Compiler::switch_statement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condtion.");
+
+  consume(TOKEN_LEFT_BRACE, "Expect '{' after 'switch'");
+  begin_scope();
+
+  int end_jump = -1;
+  // collect all of the end_jumps
+  std::vector<int> end_jumps{};
+
+  while (match(TOKEN_CASE)) {
+    // duplicate the condition expression on stack
+    emit_byte(OP_DUP);
+
+    expression();
+    consume(TOKEN_COLON, "Expect ':' after 'case'.");
+    emit_byte(OP_EQUAL);
+
+    int next_case_jump = emit_jump(OP_JUMP_IF_FALSE);
+    emit_byte(OP_POP);
+
+    statement();
+    end_jumps.push_back(emit_jump(OP_JUMP));
+
+    patch_jump(next_case_jump);
+    emit_byte(OP_POP);
+  }
+
+  if (match(TOKEN_DEFAULT_CASE)) {
+    consume(TOKEN_COLON, "Expect ':' after 'default'.");
+
+    statement();
+  }
+
+  // patch all of the end_jumps
+  for (auto end_jump : end_jumps) {
+    patch_jump(end_jump);
+  }
+
+  emit_byte(OP_POP); // original switch value
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after 'switch'");
+  end_scope();
 }
 
 void Compiler::while_statement() {

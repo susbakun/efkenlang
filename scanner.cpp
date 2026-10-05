@@ -26,6 +26,8 @@ Token Scanner::scan_token() {
     return make_token(TOKEN_RIGHT_BRACE);
   case ';':
     return make_token(TOKEN_SEMICOLON);
+  case ':':
+    return make_token(TOKEN_COLON);
   case ',':
     return make_token(TOKEN_COMMA);
   case '.':
@@ -144,6 +146,8 @@ TokenType Scanner::identifier_type() {
   case 'c':
     if (m_current - m_start > 1) {
       switch (m_start[1]) {
+      case 'a':
+        return check_type(2, 2, "se", TOKEN_CASE);
       case 'l':
         return check_type(2, 3, "ass", TOKEN_CLASS);
       case 'o':
@@ -151,6 +155,8 @@ TokenType Scanner::identifier_type() {
       }
     }
     break;
+  case 'd':
+    return check_type(1, 6, "efault", TOKEN_DEFAULT_CASE);
   case 'e':
     return check_type(1, 3, "lse", TOKEN_ELSE);
   case 'i':
@@ -164,7 +170,14 @@ TokenType Scanner::identifier_type() {
   case 'r':
     return check_type(1, 5, "eturn", TOKEN_RETURN);
   case 's':
-    return check_type(1, 4, "uper", TOKEN_SUPER);
+    if (m_current - m_start > 1) {
+      switch (m_start[1]) {
+      case 'u':
+        return check_type(2, 3, "per", TOKEN_SUPER);
+      case 'w':
+        return check_type(2, 4, "itch", TOKEN_SWITCH);
+      }
+    }
   case 'v':
     return check_type(1, 2, "ar", TOKEN_VAR);
   case 'w':

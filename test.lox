@@ -1,3 +1,13 @@
-for (var i = 8; i > 0; i = i - 1){
-    print i;
+var a = 8;
+
+switch(a) {
+    case 8:
+        print "Hello";
+    case 2:
+        print "hello 2";
+    default:
+        print "default";
+
 }
+
+print "after switch";

@@ -64,6 +64,8 @@ int disassemble_instruction(Chunk &chunk, std::size_t offset) {
     return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
   case OP_LOOP:
     return jump_instruction("OP_LOOP", -1, chunk, offset);
+  case OP_DUP:
+    return simple_instruction("OP_DUP", offset);
 
     // binary
   case OP_EQUAL:

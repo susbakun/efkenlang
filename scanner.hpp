@@ -13,6 +13,7 @@ enum TokenType {
   TOKEN_MINUS,
   TOKEN_PLUS,
   TOKEN_SEMICOLON,
+  TOKEN_COLON,
   TOKEN_SLASH,
   TOKEN_STAR,
   // One or two character tokens.
@@ -36,6 +37,9 @@ enum TokenType {
   TOKEN_FOR,
   TOKEN_FUN,
   TOKEN_IF,
+  TOKEN_SWITCH,
+  TOKEN_CASE,
+  TOKEN_DEFAULT_CASE,
   TOKEN_NIL,
   TOKEN_OR,
   TOKEN_PRINT,

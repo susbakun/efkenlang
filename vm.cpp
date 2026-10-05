@@ -174,6 +174,10 @@ InterpretResult VM::run() {
       break;
     }
 
+    case OP_DUP:
+      push(m_sp[-1]);
+      break;
+
     // binary
     case OP_EQUAL: {
       auto v1{pop()};

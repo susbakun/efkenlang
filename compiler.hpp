@@ -82,6 +82,7 @@ private:
   void statement();
   void print_statement();
   void if_statement();
+  void switch_statement();
   void while_statement();
   void for_statement();
   void begin_scope();
@@ -130,7 +131,7 @@ private:
   int m_local_count{};
   std::unordered_map<std::string, std::uint8_t> m_local_slots{};
 
-  std::array<ParseRule, 41> m_rules{{
+  std::array<ParseRule, 45> m_rules{{
       {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_RIGHT_PAREN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_LEFT_BRACE
@@ -140,6 +141,7 @@ private:
       {&Compiler::unary, &Compiler::binary, PREC_TERM}, // TOKEN_MINUS
       {nullptr, &Compiler::binary, PREC_TERM},          // TOKEN_PLUS
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_SEMICOLON
+      {nullptr, nullptr, PREC_NONE},                    // TOKEN_COLON
       {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_SLASH
       {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_STAR
       {&Compiler::unary, nullptr, PREC_NONE},           // TOKEN_BANG
@@ -160,6 +162,9 @@ private:
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_FOR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_FUN
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_IF
+      {nullptr, nullptr, PREC_NONE},                    // TOKEN_SWITCH
+      {nullptr, nullptr, PREC_NONE},                    // TOKEN_CASE
+      {nullptr, nullptr, PREC_NONE},                    // TOKEN_DEFAULT_CASE
       {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_NIL
       {nullptr, &Compiler::_or, PREC_OR},               // TOKEN_OR
       {nullptr, nullptr, PREC_NONE},                    // TOKEN_PRINT
