@@ -1,7 +1,7 @@
 var a = 8;
 
 switch(a) {
-    case 8:
+    case 2:
         print "Hello";
     case 2:
         print "hello 2";

@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 #define DEBUG_PRINT_CODE
@@ -233,10 +234,29 @@ void Compiler::switch_statement() {
   int end_jump = -1;
   // collect all of the end_jumps
   std::vector<int> end_jumps{};
+  std::unordered_set<std::string> seen_cases_value{};
 
   while (match(TOKEN_CASE)) {
     // duplicate the condition expression on stack
     emit_byte(OP_DUP);
+
+    // capture the case's own token BEFORE compiling it as an expression,
+    // since expression() will advance the parser past it
+    Token case_token{m_parser.current};
+    bool is_literal{check(TOKEN_NUMBER) || check(TOKEN_STRING) ||
+                    check(TOKEN_NIL) || check(TOKEN_TRUE) ||
+                    check(TOKEN_FALSE)};
+
+    if (is_literal) {
+      std::string lexeme{case_token.start,
+                         static_cast<std::size_t>(case_token.length)};
+
+      if (seen_cases_value.contains(lexeme)) {
+        error("Duplicate case value.");
+      } else {
+        seen_cases_value.insert(std::move(lexeme));
+      }
+    }
 
     expression();
     consume(TOKEN_COLON, "Expect ':' after 'case'.");
