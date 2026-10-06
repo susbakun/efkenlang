@@ -87,17 +87,18 @@ void Compiler::function(FunctionType type) {
 
   compiler.consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
 
-  if (!check(TOKEN_RIGHT_PAREN)) {
+  if (!compiler.check(TOKEN_RIGHT_PAREN)) {
     do {
       compiler.m_function->arity++;
       if (compiler.m_function->arity > 255) {
         error_at_current("Can't have more than 255 parameters.");
       }
 
-      std::uint8_t constant{parse_variable("Expect parameter name.", false)};
-      define_variable(constant);
+      std::uint8_t constant{
+          compiler.parse_variable("Expect parameter name.", false)};
+      compiler.define_variable(constant);
 
-    } while (match(TOKEN_COMMA));
+    } while (compiler.match(TOKEN_COMMA));
   }
 
   compiler.consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
@@ -526,7 +527,7 @@ std::uint8_t Compiler::argument_list() {
   std::uint8_t arg_count{};
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
-      expression();
+      parse_precedence(PREC_ASSIGNMENT);
       if (arg_count == 255) {
         error("Can't have more than 255 arguments.");
       }
@@ -596,7 +597,10 @@ void Compiler::emit_loop(int loop_start) {
   emit_byte(offset & 0xff);
 }
 
-void Compiler::emit_return() { emit_byte(OP_RETURN); }
+void Compiler::emit_return() {
+  emit_byte(OP_NIL);
+  emit_byte(OP_RETURN);
+}
 
 void Compiler::grouping(bool can_assign) {
   expression();

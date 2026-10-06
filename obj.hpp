@@ -31,6 +31,8 @@ ObjFunction* new_function();
 ObjString* as_string(const Value& value);
 std::string& as_cpp_str(const Value& value);
 
+ObjFunction* as_function(const Value& value);
+
 bool is_obj_type(const Value& value, const ObjType type);
 
 void print_object(const Value& value);

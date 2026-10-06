@@ -1,5 +1,6 @@
-fun areWeHavingItYet() {
-  print "Yes we are!";
+fun fc(a, b) {
+  var c = 8;
+  print a + b + c;
 }
 
-print areWeHavingItYet;
+fc(2, 3);

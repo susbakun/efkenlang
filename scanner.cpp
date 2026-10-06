@@ -1,62 +1,59 @@
 #include "scanner.hpp"
+
 #include <cstring>
 
 Token Scanner::scan_token() {
   skip_whitespace();
   m_start = m_current;
 
-  if (is_at_end())
-    return make_token(TOKEN_EOF);
+  if (is_at_end()) return make_token(TOKEN_EOF);
 
   char c{advance()};
 
-  if (is_alpha(c))
-    return identifier();
-  if (is_digit(c))
-    return number();
+  if (is_alpha(c)) return identifier();
+  if (is_digit(c)) return number();
 
   switch (c) {
-  case '(':
-    return make_token(TOKEN_LEFT_PAREN);
-  case ')':
-    return make_token(TOKEN_RIGHT_PAREN);
-  case '{':
-    return make_token(TOKEN_LEFT_BRACE);
-  case '}':
-    return make_token(TOKEN_RIGHT_BRACE);
-  case ';':
-    return make_token(TOKEN_SEMICOLON);
-  case ':':
-    return make_token(TOKEN_COLON);
-  case ',':
-    return make_token(TOKEN_COMMA);
-  case '.':
-    return make_token(TOKEN_DOT);
-  case '-':
-    return make_token(TOKEN_MINUS);
-  case '+':
-    return make_token(TOKEN_PLUS);
-  case '/':
-    if (peek_next() == '/') {
-      while (peek() != '\n' && !is_at_end())
-        advance();
-      break;
-    }
-    return make_token(TOKEN_SLASH);
-  case '*':
-    return make_token(TOKEN_STAR);
+    case '(':
+      return make_token(TOKEN_LEFT_PAREN);
+    case ')':
+      return make_token(TOKEN_RIGHT_PAREN);
+    case '{':
+      return make_token(TOKEN_LEFT_BRACE);
+    case '}':
+      return make_token(TOKEN_RIGHT_BRACE);
+    case ';':
+      return make_token(TOKEN_SEMICOLON);
+    case ':':
+      return make_token(TOKEN_COLON);
+    case ',':
+      return make_token(TOKEN_COMMA);
+    case '.':
+      return make_token(TOKEN_DOT);
+    case '-':
+      return make_token(TOKEN_MINUS);
+    case '+':
+      return make_token(TOKEN_PLUS);
+    case '/':
+      if (peek_next() == '/') {
+        while (peek() != '\n' && !is_at_end()) advance();
+        break;
+      }
+      return make_token(TOKEN_SLASH);
+    case '*':
+      return make_token(TOKEN_STAR);
 
-  case '!':
-    return make_token(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
-  case '=':
-    return make_token(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
-  case '<':
-    return make_token(match('=') ? TOKEN_LESS_EQUAL : TOKEN_EQUAL);
-  case '>':
-    return make_token(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+    case '!':
+      return make_token(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+    case '=':
+      return make_token(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+    case '<':
+      return make_token(match('=') ? TOKEN_LESS_EQUAL : TOKEN_EQUAL);
+    case '>':
+      return make_token(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
 
-  case '"':
-    return string();
+    case '"':
+      return string();
   }
 
   return error_token("Unexpected character.");
@@ -78,16 +75,13 @@ char Scanner::advance() {
 char Scanner::peek() { return *m_current; }
 
 char Scanner::peek_next() {
-  if (!is_at_end())
-    return '\0';
+  if (!is_at_end()) return '\0';
   return m_current[1];
 }
 
 bool Scanner::match(char expected) {
-  if (is_at_end())
-    return false;
-  if (*m_current != expected)
-    return false;
+  if (is_at_end()) return false;
+  if (*m_current != expected) return false;
 
   m_current++;
   return true;
@@ -120,13 +114,16 @@ void Scanner::skip_whitespace() {
     char c{peek()};
 
     switch (c) {
-    case ' ':
-    case '\t':
-    case '\n':
-      advance();
-      break;
-    default:
-      return;
+      case ' ':
+      case '\t':
+        advance();
+        break;
+      case '\n':
+        advance();
+        m_line++;
+        break;
+      default:
+        return;
     }
   }
 }
@@ -141,84 +138,84 @@ Token Scanner::identifier() {
 
 TokenType Scanner::identifier_type() {
   switch (*m_start) {
-  case 'a':
-    return check_type(1, 2, "nd", TOKEN_AND);
-  case 'b':
-    return check_type(1, 4, "reak", TOKEN_BREAK);
-  case 'c':
-    if (m_current - m_start > 1) {
-      switch (m_start[1]) {
-      case 'a':
-        return check_type(2, 2, "se", TOKEN_CASE);
-      case 'l':
-        return check_type(2, 3, "ass", TOKEN_CLASS);
-      case 'o':
-        if (m_start[2] == 'n') {
-          switch (m_start[3]) {
-          case 's':
-            return check_type(4, 1, "t", TOKEN_CONST);
-          case 't':
-            return check_type(4, 4, "inue", TOKEN_CONTINUE);
-          }
+    case 'a':
+      return check_type(1, 2, "nd", TOKEN_AND);
+    case 'b':
+      return check_type(1, 4, "reak", TOKEN_BREAK);
+    case 'c':
+      if (m_current - m_start > 1) {
+        switch (m_start[1]) {
+          case 'a':
+            return check_type(2, 2, "se", TOKEN_CASE);
+          case 'l':
+            return check_type(2, 3, "ass", TOKEN_CLASS);
+          case 'o':
+            if (m_start[2] == 'n') {
+              switch (m_start[3]) {
+                case 's':
+                  return check_type(4, 1, "t", TOKEN_CONST);
+                case 't':
+                  return check_type(4, 4, "inue", TOKEN_CONTINUE);
+              }
+            }
         }
       }
-    }
-    break;
-  case 'd':
-    return check_type(1, 6, "efault", TOKEN_DEFAULT_CASE);
-  case 'e':
-    return check_type(1, 3, "lse", TOKEN_ELSE);
-  case 'i':
-    return check_type(1, 1, "f", TOKEN_IF);
-  case 'n':
-    return check_type(1, 2, "il", TOKEN_NIL);
-  case 'o':
-    return check_type(1, 1, "r", TOKEN_OR);
-  case 'p':
-    return check_type(1, 4, "rint", TOKEN_PRINT);
-  case 'r':
-    return check_type(1, 5, "eturn", TOKEN_RETURN);
-  case 's':
-    if (m_current - m_start > 1) {
-      switch (m_start[1]) {
-      case 'u':
-        return check_type(2, 3, "per", TOKEN_SUPER);
-      case 'w':
-        return check_type(2, 4, "itch", TOKEN_SWITCH);
+      break;
+    case 'd':
+      return check_type(1, 6, "efault", TOKEN_DEFAULT_CASE);
+    case 'e':
+      return check_type(1, 3, "lse", TOKEN_ELSE);
+    case 'i':
+      return check_type(1, 1, "f", TOKEN_IF);
+    case 'n':
+      return check_type(1, 2, "il", TOKEN_NIL);
+    case 'o':
+      return check_type(1, 1, "r", TOKEN_OR);
+    case 'p':
+      return check_type(1, 4, "rint", TOKEN_PRINT);
+    case 'r':
+      return check_type(1, 5, "eturn", TOKEN_RETURN);
+    case 's':
+      if (m_current - m_start > 1) {
+        switch (m_start[1]) {
+          case 'u':
+            return check_type(2, 3, "per", TOKEN_SUPER);
+          case 'w':
+            return check_type(2, 4, "itch", TOKEN_SWITCH);
+        }
       }
-    }
-  case 'v':
-    return check_type(1, 2, "ar", TOKEN_VAR);
-  case 'w':
-    return check_type(1, 4, "hile", TOKEN_WHILE);
-  case 'f':
-    if (m_current - m_start > 1) {
-      switch (m_start[1]) {
-      case 'a':
-        return check_type(2, 3, "lse", TOKEN_FALSE);
-      case 'o':
-        return check_type(2, 1, "r", TOKEN_FOR);
-      case 'u':
-        return check_type(2, 1, "n", TOKEN_FUN);
+    case 'v':
+      return check_type(1, 2, "ar", TOKEN_VAR);
+    case 'w':
+      return check_type(1, 4, "hile", TOKEN_WHILE);
+    case 'f':
+      if (m_current - m_start > 1) {
+        switch (m_start[1]) {
+          case 'a':
+            return check_type(2, 3, "lse", TOKEN_FALSE);
+          case 'o':
+            return check_type(2, 1, "r", TOKEN_FOR);
+          case 'u':
+            return check_type(2, 1, "n", TOKEN_FUN);
+        }
       }
-    }
-    break;
-  case 't':
-    if (m_current - m_start > 1) {
-      switch (m_start[1]) {
-      case 'h':
-        return check_type(2, 2, "is", TOKEN_THIS);
-      case 'r':
-        return check_type(2, 2, "ue", TOKEN_TRUE);
+      break;
+    case 't':
+      if (m_current - m_start > 1) {
+        switch (m_start[1]) {
+          case 'h':
+            return check_type(2, 2, "is", TOKEN_THIS);
+          case 'r':
+            return check_type(2, 2, "ue", TOKEN_TRUE);
+        }
       }
-    }
-    break;
+      break;
   }
 
   return TOKEN_IDENTIFIER;
 }
 
-TokenType Scanner::check_type(int start, int length, const char *rest,
+TokenType Scanner::check_type(int start, int length, const char* rest,
                               TokenType type) {
   if (((m_current - m_start) == (start + length)) &&
       (std::memcmp(m_start + start, rest, length)) == 0) {
@@ -236,8 +233,7 @@ Token Scanner::number() {
   if (peek() == '.' && is_digit(peek_next())) {
     // consume '.'
     advance();
-    while (is_digit(peek()))
-      advance();
+    while (is_digit(peek())) advance();
   }
 
   return make_token(TOKEN_NUMBER);
@@ -245,14 +241,12 @@ Token Scanner::number() {
 
 Token Scanner::string() {
   while (peek() != '"' && !is_at_end()) {
-    if (peek() == '\n')
-      m_line++;
+    if (peek() == '\n') m_line++;
 
     advance();
   }
 
-  if (is_at_end())
-    return error_token("Unterminated string");
+  if (is_at_end()) return error_token("Unterminated string");
 
   // consume the trailing '"'
   advance();
