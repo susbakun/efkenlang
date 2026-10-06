@@ -1,9 +1,5 @@
 #pragma once
 
-#include "chunk.hpp"
-#include "common.hpp"
-#include "scanner.hpp"
-#include "vm.hpp"
 #include <array>
 #include <cstdint>
 #include <string>
@@ -11,6 +7,12 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+
+#include "chunk.hpp"
+#include "common.hpp"
+#include "obj.hpp"
+#include "scanner.hpp"
+#include "vm.hpp"
 
 struct Parser {
   Token current;
@@ -22,15 +24,15 @@ struct Parser {
 enum Precedence {
   PREC_NONE,
   PREC_COMMA,
-  PREC_ASSIGNMENT, // =
-  PREC_OR,         // or
-  PREC_AND,        // and
-  PREC_EQUALITY,   // == !=
-  PREC_COMPARISON, // < > <= >=
-  PREC_TERM,       // + -
-  PREC_FACTOR,     // * /
-  PREC_UNARY,      // ! -
-  PREC_CALL,       // . ()
+  PREC_ASSIGNMENT,  // =
+  PREC_OR,          // or
+  PREC_AND,         // and
+  PREC_EQUALITY,    // == !=
+  PREC_COMPARISON,  // < > <= >=
+  PREC_TERM,        // + -
+  PREC_FACTOR,      // * /
+  PREC_UNARY,       // ! -
+  PREC_CALL,        // . ()
   PREC_PRIMARY
 };
 
@@ -61,30 +63,69 @@ struct Loop {
   std::vector<int> break_jumps{};
 };
 
+enum FunctionType { TYPE_FUNCTION, TYPE_SCRIPT };
+
 class Compiler {
-public:
-  Compiler(VM &vm, const std::string_view source, Chunk &chunk)
-      : m_vm{vm}, m_scanner{source}, m_compiling_chunk{chunk} {}
+ public:
+  Compiler(VM& vm, Scanner& scanner, Parser& parser, FunctionType type)
+      : m_vm{vm}, m_scanner{scanner}, m_parser{parser}, m_type{type} {
+    auto& local{m_locals[m_local_count++]};
+    local.depth = 0;
+    local.is_const = false;
+    local.name.start = "";
+    local.name.length = 0;
 
-  bool compile();
+    std::string fname_str{""};
 
-private:
+    m_local_slots.insert({fname_str, 0});
+  }
+
+  Compiler(Compiler& enclosing, FunctionType type)
+      : m_vm{enclosing.m_vm},
+        m_type{type},
+        m_scanner{enclosing.m_scanner},
+        m_parser{enclosing.m_parser} {
+    auto& local{m_locals[m_local_count++]};
+    local.depth = 0;
+    local.is_const = false;
+    local.name.start = "";
+    local.name.length = 0;
+
+    std::string fname_str{""};
+
+    m_local_slots.insert({fname_str, 0});
+
+    if (type != TYPE_SCRIPT) {
+      std::string name{
+          enclosing.m_parser.previous.start,
+          static_cast<std::size_t>(enclosing.m_parser.previous.length)};
+
+      m_function->name = allocate_string(enclosing.m_vm, name);
+    }
+  }
+
+  ObjFunction* compile();
+
+ private:
   void advance();
   void consume(const TokenType type, const std::string_view message);
   bool match(TokenType type);
   bool check(TokenType type);
+  Chunk& compiling_chunk();
 
   void declaration();
+  void fun_declration();
+  void function(FunctionType type);
   void var_declration(bool is_const);
   std::uint8_t parse_variable(const std::string_view error_message,
                               bool is_const);
   void declare_variable(bool is_const);
   void mark_as_initilized();
-  std::tuple<std::uint8_t, bool> identifier_constant(Token &name,
+  std::tuple<std::uint8_t, bool> identifier_constant(Token& name,
                                                      bool is_const);
-  bool identifiers_equal(Token &name1, Token &name2);
+  bool identifiers_equal(Token& name1, Token& name2);
 
-  void add_local(Token &name, bool is_const);
+  void add_local(Token& name, bool is_const);
   void define_variable(std::uint8_t global);
   void statement();
   void print_statement();
@@ -101,16 +142,17 @@ private:
 
   void syncronize();
 
-  ParseRule &get_rule(const TokenType type);
+  ParseRule& get_rule(const TokenType type);
   void number(bool can_assign);
   void string(bool can_assign);
   void variable(bool can_assign);
-  void named_variable(Token &name, bool can_assign);
-  std::tuple<int, bool> resolve_local(Token &name);
+  void named_variable(Token& name, bool can_assign);
+  std::tuple<int, bool> resolve_local(Token& name);
+  std::uint8_t argument_list();
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
   void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
-  void end_compiler();
+  ObjFunction* end_compiler();
   int emit_jump(std::uint8_t instruction);
   void patch_jump(int loop_start);
   void emit_loop(int offset);
@@ -123,19 +165,21 @@ private:
   void _or(bool can_assign);
   void continue_stmt(bool can_assign);
   void break_stmt(bool can_assign);
+  void call(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
 
   void error_at_current(const std::string_view message);
   void error(const std::string_view message);
-  void error_at(Token &token, const std::string_view message);
+  void error_at(Token& token, const std::string_view message);
 
-  VM &m_vm;
-  Scanner m_scanner;
-  Parser m_parser{};
-  Chunk &m_compiling_chunk;
-  std::unordered_map<ObjString *, Global> m_variables_index{};
+  VM& m_vm;
+  ObjFunction* m_function{new_function()};
+  FunctionType m_type;
+  Scanner& m_scanner;
+  Parser& m_parser;
+  std::unordered_map<ObjString*, Global> m_variables_index{};
   std::array<Local, UINT8_COUNT> m_locals{};
   int m_scope_depth{};
   int m_local_count{};
@@ -144,52 +188,52 @@ private:
   std::vector<Loop> m_target_loops{};
 
   std::array<ParseRule, 47> m_rules{{
-      {&Compiler::grouping, nullptr, PREC_NONE},        // TOKEN_LEFT_PAREN
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_RIGHT_PAREN
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_LEFT_BRACE
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_RIGHT_BRACE
-      {nullptr, &Compiler::binary, PREC_COMMA},         // TOKEN_COMMA
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_DOT
-      {&Compiler::unary, &Compiler::binary, PREC_TERM}, // TOKEN_MINUS
-      {nullptr, &Compiler::binary, PREC_TERM},          // TOKEN_PLUS
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_SEMICOLON
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_COLON
-      {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_SLASH
-      {nullptr, &Compiler::binary, PREC_FACTOR},        // TOKEN_STAR
-      {&Compiler::unary, nullptr, PREC_NONE},           // TOKEN_BANG
-      {nullptr, &Compiler::binary, PREC_EQUALITY},      // TOKEN_BANG_EQUAL
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_EQUAL
-      {nullptr, &Compiler::binary, PREC_EQUALITY},      // TOKEN_EQUAL_EQUAL
-      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_GREATER
-      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_GREATER_EQUAL
-      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS
-      {nullptr, &Compiler::binary, PREC_COMPARISON},    // TOKEN_LESS_EQUAL
-      {&Compiler::variable, nullptr, PREC_NONE},        // TOKEN_IDENTIFIER
-      {&Compiler::string, nullptr, PREC_NONE},          // TOKEN_STRING
-      {&Compiler::number, nullptr, PREC_NONE},          // TOKEN_NUMBER
-      {nullptr, &Compiler::_and, PREC_AND},             // TOKEN_AND
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_CLASS
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_ELSE
-      {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_FALSE
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_FOR
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_FUN
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_IF
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_SWITCH
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_CASE
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_DEFAULT_CASE
-      {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_NIL
-      {nullptr, &Compiler::_or, PREC_OR},               // TOKEN_OR
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_PRINT
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_RETURN
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_SUPER
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_THIS
-      {&Compiler::literal, nullptr, PREC_NONE},         // TOKEN_TRUE
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_VAR
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_CONST
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_WHILE
-      {&Compiler::continue_stmt, nullptr, PREC_NONE},   // TOKEN_CONTINUE
-      {&Compiler::break_stmt, nullptr, PREC_NONE},      // TOKEN_BREAK
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_ERROR
-      {nullptr, nullptr, PREC_NONE},                    // TOKEN_EOF
+      {&Compiler::grouping, &Compiler::call, PREC_CALL},  // TOKEN_LEFT_PAREN
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_RIGHT_PAREN
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_LEFT_BRACE
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_RIGHT_BRACE
+      {nullptr, &Compiler::binary, PREC_COMMA},           // TOKEN_COMMA
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_DOT
+      {&Compiler::unary, &Compiler::binary, PREC_TERM},   // TOKEN_MINUS
+      {nullptr, &Compiler::binary, PREC_TERM},            // TOKEN_PLUS
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_SEMICOLON
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_COLON
+      {nullptr, &Compiler::binary, PREC_FACTOR},          // TOKEN_SLASH
+      {nullptr, &Compiler::binary, PREC_FACTOR},          // TOKEN_STAR
+      {&Compiler::unary, nullptr, PREC_NONE},             // TOKEN_BANG
+      {nullptr, &Compiler::binary, PREC_EQUALITY},        // TOKEN_BANG_EQUAL
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_EQUAL
+      {nullptr, &Compiler::binary, PREC_EQUALITY},        // TOKEN_EQUAL_EQUAL
+      {nullptr, &Compiler::binary, PREC_COMPARISON},      // TOKEN_GREATER
+      {nullptr, &Compiler::binary, PREC_COMPARISON},      // TOKEN_GREATER_EQUAL
+      {nullptr, &Compiler::binary, PREC_COMPARISON},      // TOKEN_LESS
+      {nullptr, &Compiler::binary, PREC_COMPARISON},      // TOKEN_LESS_EQUAL
+      {&Compiler::variable, nullptr, PREC_NONE},          // TOKEN_IDENTIFIER
+      {&Compiler::string, nullptr, PREC_NONE},            // TOKEN_STRING
+      {&Compiler::number, nullptr, PREC_NONE},            // TOKEN_NUMBER
+      {nullptr, &Compiler::_and, PREC_AND},               // TOKEN_AND
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_CLASS
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_ELSE
+      {&Compiler::literal, nullptr, PREC_NONE},           // TOKEN_FALSE
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_FOR
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_FUN
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_IF
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_SWITCH
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_CASE
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_DEFAULT_CASE
+      {&Compiler::literal, nullptr, PREC_NONE},           // TOKEN_NIL
+      {nullptr, &Compiler::_or, PREC_OR},                 // TOKEN_OR
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_PRINT
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_RETURN
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_SUPER
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_THIS
+      {&Compiler::literal, nullptr, PREC_NONE},           // TOKEN_TRUE
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_VAR
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_CONST
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_WHILE
+      {&Compiler::continue_stmt, nullptr, PREC_NONE},     // TOKEN_CONTINUE
+      {&Compiler::break_stmt, nullptr, PREC_NONE},        // TOKEN_BREAK
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_ERROR
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_EOF
   }};
 };

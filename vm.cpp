@@ -3,6 +3,7 @@
 #include "compiler.hpp"
 #include "debug.hpp"
 #include "obj.hpp"
+#include "scanner.hpp"
 #include "value.hpp"
 #include <cstdarg>
 #include <cstddef>
@@ -34,19 +35,22 @@
   } while (false)
 
 InterpretResult VM::interpret(const std::string_view source) {
-  Chunk chunk{};
-  Compiler compiler{*this, source, chunk};
+  Scanner scanner{source};
+  Parser parser{};
 
-  if (!compiler.compile()) {
+  Compiler compiler{*this, scanner, parser, TYPE_SCRIPT};
+  auto function{compiler.compile()};
+
+  if (function == nullptr)
     return INTERPRET_COMPILE_ERROR;
-  }
 
-  m_chunk = chunk;
-  m_ip = &m_chunk.get_code_ref(0);
+  push(Value{function});
+  CallFrame &frame{m_frames[m_frame_count++]};
+  frame.function = function;
+  frame.ip = &function->chunk.get_code_ref(0);
+  frame.slots = &m_stack[0];
 
-  auto result{run()};
-
-  return result;
+  return run();
 }
 
 InterpretResult VM::run() {
@@ -61,7 +65,9 @@ InterpretResult VM::run() {
     std::println();
 
     disassemble_instruction(
-        m_chunk, static_cast<std::size_t>(m_ip - &m_chunk.get_code_ref(0)));
+        m_frame->function->chunk,
+        static_cast<std::size_t>(m_frame->ip -
+                                 &m_frame->function->chunk.get_code_ref(0)));
 
 #endif
 
@@ -160,17 +166,17 @@ InterpretResult VM::run() {
     case OP_JUMP_IF_FALSE: {
       std::uint16_t offset{read_short()};
       if (!peek(0).as_boolean())
-        m_ip += offset;
+        m_frame->ip += offset;
       break;
     }
     case OP_JUMP: {
       std::uint16_t offset{read_short()};
-      m_ip += offset;
+      m_frame->ip += offset;
       break;
     }
     case OP_LOOP: {
       std::uint16_t offset{read_short()};
-      m_ip -= offset;
+      m_frame->ip -= offset;
       break;
     }
 
@@ -228,9 +234,11 @@ InterpretResult VM::run() {
   }
 }
 
-std::uint8_t VM::read_byte() { return *m_ip++; }
+std::uint8_t VM::read_byte() { return *m_frame->ip++; }
 
-Value VM::read_constant() { return m_chunk.get_constant(read_byte()); }
+Value VM::read_constant() {
+  return m_frame->function->chunk.get_constant(read_byte());
+}
 
 Value VM::read_constant_long() {
   auto ind_first_byte{read_byte()};
@@ -239,12 +247,12 @@ Value VM::read_constant_long() {
 
   auto ind{(ind_first_byte << 16) + (ind_second_byte << 8) + ind_third_byte};
 
-  return m_chunk.get_constant(ind);
+  return m_frame->function->chunk.get_constant(ind);
 }
 
 std::uint16_t VM::read_short() {
-  m_ip += 2;
-  return (m_ip[-2] << 8) | m_ip[-1];
+  m_frame->ip += 2;
+  return (m_frame->ip[-2] << 8) | m_frame->ip[-1];
 }
 
 ObjString *VM::read_string() { return as_string(read_constant()); }
@@ -321,10 +329,10 @@ void VM::runtime_error(const std::string_view format, ...) {
   std::vfprintf(stderr, format.data(), args);
   va_end(args);
 
-  auto instruction{
-      static_cast<std::size_t>(m_ip - &m_chunk.get_code_ref(0) - 1)};
+  auto instruction{static_cast<std::size_t>(
+      m_frame->ip - &m_frame->function->chunk.get_code_ref(0) - 1)};
 
-  int line{m_chunk.get_lines(instruction).line};
+  int line{m_frame->function->chunk.get_lines(instruction).line};
   std::println("[line {}] in script", line);
   reset_stack();
 }

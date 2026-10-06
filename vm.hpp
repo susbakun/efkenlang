@@ -1,6 +1,6 @@
 #pragma once
 
-#include "chunk.hpp"
+#include "common.hpp"
 #include "obj.hpp"
 #include "value.hpp"
 #include <array>
@@ -15,6 +15,12 @@ enum InterpretResult {
   INTERPRET_OK,
   INTERPRET_COMPILE_ERROR,
   INTERPRET_RUNTIME_ERROR
+};
+
+struct CallFrame {
+  ObjFunction *function;
+  uint8_t *ip;
+  Value *slots;
 };
 
 class VM {
@@ -48,8 +54,9 @@ private:
   void runtime_error(const std::string_view format, ...);
   void reset_stack();
 
-  Chunk m_chunk;
-  uint8_t *m_ip;
+  std::array<CallFrame, FRAMES_MAX> m_frames{};
+  int m_frame_count{};
+  CallFrame *m_frame{&m_frames[0]};
   std::array<Value, STACK_MAX> m_stack{};
   Value *m_sp{m_stack.data()};
   std::unordered_map<std::string, ObjString *> m_strings{};

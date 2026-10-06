@@ -1,8 +1,9 @@
 #pragma once
 
-#include "value.hpp"
 #include <cstddef>
 #include <vector>
+
+#include "value.hpp"
 
 enum OpCode : std::uint8_t {
   OP_RETURN,
@@ -27,6 +28,7 @@ enum OpCode : std::uint8_t {
   OP_JUMP_IF_FALSE,
   OP_JUMP,
   OP_LOOP,
+  OP_CALL,
 
   OP_DUP,
 
@@ -47,7 +49,7 @@ struct LineRun {
 };
 
 class Chunk {
-public:
+ public:
   Chunk() = default;
 
   void write_chunk(std::uint8_t byte, int line);
@@ -58,15 +60,15 @@ public:
   Value get_constant(const std::size_t offset) const;
   LineRun get_lines(const std::size_t offset) const;
 
-  std::uint8_t &get_code_ref(const std::size_t offset);
-  Value &get_constant_ref(const std::size_t offset);
-  LineRun &get_lines_ref(const std::size_t offset);
+  std::uint8_t& get_code_ref(const std::size_t offset);
+  Value& get_constant_ref(const std::size_t offset);
+  LineRun& get_lines_ref(const std::size_t offset);
 
   std::size_t code_size() const;
   std::size_t constants_size() const;
   std::size_t lines_size() const;
 
-private:
+ private:
   std::vector<std::uint8_t> m_code{};
   std::vector<LineRun> m_lines{};
   ValueArray m_constants{};

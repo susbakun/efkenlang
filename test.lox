@@ -1,14 +1,5 @@
-var a = 2;
-
-while (a > 0){
-    a = a - 1;
-
-    var b = 3;
-
-    if (a == 0) {
-        break;
-    }
-
-    print "a: " + a;
-    print "b: " + b;
+fun areWeHavingItYet() {
+  print "Yes we are!";
 }
+
+print areWeHavingItYet;

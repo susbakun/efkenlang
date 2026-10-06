@@ -1,4 +1,5 @@
 #include "obj.hpp"
+#include "chunk.hpp"
 #include "value.hpp"
 #include "vm.hpp"
 #include <cstddef>
@@ -23,11 +24,25 @@ ObjString *allocate_string(VM &vm, std::string str) {
   return object;
 }
 
+ObjFunction *new_function() {
+  auto *object = new ObjFunction{};
+  object->type = OBJ_FUNCTION;
+  object->arity = 0;
+  object->name = nullptr;
+  object->chunk = Chunk{};
+
+  return object;
+}
+
 ObjString *as_string(const Value &value) {
   return static_cast<ObjString *>(value.as_obj());
 }
 std::string &as_cpp_str(const Value &value) {
   return static_cast<ObjString *>(value.as_obj())->str;
+}
+
+ObjFunction *as_function(const Value &value) {
+  return static_cast<ObjFunction *>(value.as_obj());
 }
 
 bool is_obj_type(const Value &value, const ObjType type) {
@@ -38,6 +53,11 @@ std::string object_to_string(const Value &value) {
   switch (obj_type(value)) {
   case OBJ_STRING:
     return std::format("{}", as_cpp_str(value));
+  case OBJ_FUNCTION: {
+    auto function{as_function(value)};
+    return std::format("{}", function->name != nullptr ? function->name->str
+                                                       : "<script>");
+  }
   }
 }
 
@@ -46,5 +66,11 @@ void print_object(const Value &value) {
   case OBJ_STRING:
     std::print("{}", as_cpp_str(value));
     break;
+  case OBJ_FUNCTION: {
+    auto function{as_function(value)};
+    std::print("{}",
+               function->name != nullptr ? function->name->str : "<script>");
+    break;
+  }
   }
 }
