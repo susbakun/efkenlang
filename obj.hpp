@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "chunk.hpp"
 #include "value.hpp"
 
@@ -23,7 +25,7 @@ struct ObjFunction : public Obj {
   ObjString* name;
 };
 
-using NativeFn = Value (*)(int arg_count, Value* args);
+using NativeFn = std::optional<Value> (VM::*)(int arg_count, Value* args);
 
 struct ObjNative : public Obj {
   NativeFn function;

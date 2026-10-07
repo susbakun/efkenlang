@@ -1,5 +1,6 @@
 #include "vm.hpp"
 
+#include <chrono>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
@@ -10,6 +11,7 @@
 #include <print>
 #include <string>
 #include <string_view>
+#include <thread>
 
 #include "chunk.hpp"
 #include "compiler.hpp"
@@ -370,14 +372,98 @@ bool VM::call_native(ObjNative* native, int arg_count) {
                               native->arity, arg_count));
     return false;
   }
-  Value result{native->function(arg_count, m_sp - arg_count)};
+
+  // ugly shit again
+  std::optional<Value> result{
+      (this->*native->function)(arg_count, m_sp - arg_count)};
+
+  if (!result) {
+    return false;
+  }
+
   m_sp -= (arg_count + 1);
-  push(result);
+
+  // for void functions
+  if (!result->is_nil()) {
+    push(*result);
+  }
+
   return true;
 }
 
-Value VM::clock_native(int arg_count, Value* args) {
+std::optional<Value> VM::input_native(int arg_count, Value* args) {
+  std::string input{};
+  std::getline(std::cin >> std::ws, input);
+
+  auto str_obj{allocate_string(*this, input)};
+
+  return Value{str_obj};
+}
+
+std::optional<Value> VM::clock_native(int arg_count, Value* args) {
   return Value{static_cast<double>(clock()) / CLOCKS_PER_SEC};
+}
+
+std::optional<Value> VM::sqrt_native(int arg_count, Value* args) {
+  if (arg_count != 1 || !args[0].is_number()) {
+    runtime_error("sqrt() expects one number.");
+    return {};
+  }
+
+  double num{args[0].as_number()};
+  if (num < 0.0) {
+    runtime_error("sqrt() expects positive numbers.");
+    return {};
+  }
+
+  return std::sqrt(num);
+}
+
+std::optional<Value> VM::abs_native(int arg_count, Value* args) {
+  if (arg_count != 1 || !args[0].is_number()) {
+    runtime_error("abs() expects one number.");
+    return {};
+  }
+
+  double num{args[0].as_number()};
+  return std::abs(num);
+}
+
+std::optional<Value> VM::type_native(int arg_count, Value* args) {
+  auto type_str_obj{allocate_string(*this, std::string(args[0].value_type()))};
+  return Value{type_str_obj};
+}
+
+std::optional<Value> VM::sleep_native(int arg_count, Value* args) {
+  if (arg_count != 1 || !args[0].is_number()) {
+    runtime_error("sleep() expects one number.");
+    return {};
+  }
+
+  double num{args[0].as_number()};
+  if (num < 0.0) {
+    runtime_error("sleep() expects positive numbers.");
+    return {};
+  }
+
+  std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(num));
+
+  return Value{};
+}
+
+std::optional<Value> VM::exit_native(int arg_count, Value* args) {
+  if (arg_count != 1 || !args[0].is_number()) {
+    runtime_error("exit() expects one number.");
+    return {};
+  }
+
+  double num{args[0].as_number()};
+  if (num < 0.0) {
+    runtime_error("exit() expects positive numbers.");
+    return {};
+  }
+
+  std::exit(num);
 }
 
 void VM::define_native(const std::string& name, NativeFn function, int arity) {

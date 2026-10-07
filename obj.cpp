@@ -36,7 +36,7 @@ ObjFunction* new_function() {
 }
 
 ObjNative* new_native(NativeFn function, int arity) {
-  auto* object{new ObjNative{}};
+  ObjNative* object{new ObjNative{}};
   object->type = OBJ_NATIVE;
   object->function = function;
   object->arity = arity;

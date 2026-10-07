@@ -35,10 +35,6 @@ Token Scanner::scan_token() {
     case '+':
       return make_token(TOKEN_PLUS);
     case '/':
-      if (peek_next() == '/') {
-        while (peek() != '\n' && !is_at_end()) advance();
-        break;
-      }
       return make_token(TOKEN_SLASH);
     case '*':
       return make_token(TOKEN_STAR);
@@ -75,7 +71,7 @@ char Scanner::advance() {
 char Scanner::peek() { return *m_current; }
 
 char Scanner::peek_next() {
-  if (!is_at_end()) return '\0';
+  if (is_at_end()) return '\0';
   return m_current[1];
 }
 
@@ -122,6 +118,14 @@ void Scanner::skip_whitespace() {
         advance();
         m_line++;
         break;
+      case '/':
+        if (peek_next() == '/') {
+          while (peek() != '\n' && !is_at_end()) advance();
+        } else {
+          return;
+        }
+        break;
+
       default:
         return;
     }
@@ -184,6 +188,7 @@ TokenType Scanner::identifier_type() {
             return check_type(2, 4, "itch", TOKEN_SWITCH);
         }
       }
+      break;
     case 'v':
       return check_type(1, 2, "ar", TOKEN_VAR);
     case 'w':

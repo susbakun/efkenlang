@@ -26,7 +26,15 @@ struct CallFrame {
 
 class VM {
  public:
-  VM() { define_native(std::string("clock"), clock_native, 0); }
+  VM() {
+    define_native(std::string("input"), &VM::input_native, 0);
+    define_native(std::string("clock"), &VM::clock_native, 0);
+    define_native(std::string("sqrt"), &VM::sqrt_native, 1);
+    define_native(std::string("abs"), &VM::abs_native, 1);
+    define_native(std::string("type"), &VM::type_native, 1);
+    define_native(std::string("sleep"), &VM::sleep_native, 1);
+    define_native(std::string("exit"), &VM::exit_native, 1);
+  }
 
   InterpretResult interpret(const std::string_view source);
 
@@ -45,7 +53,14 @@ class VM {
   bool call(ObjFunction* function, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
 
-  static Value clock_native(int arg_count, Value* args);
+  // native functions
+  std::optional<Value> input_native(int arg_count, Value* args);
+  std::optional<Value> clock_native(int arg_count, Value* args);
+  std::optional<Value> sqrt_native(int arg_count, Value* args);
+  std::optional<Value> abs_native(int arg_count, Value* args);
+  std::optional<Value> type_native(int arg_count, Value* args);
+  std::optional<Value> sleep_native(int arg_count, Value* args);
+  std::optional<Value> exit_native(int arg_count, Value* args);
   void define_native(const std::string& name, NativeFn function, int arity);
 
   std::uint8_t read_byte();
