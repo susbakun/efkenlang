@@ -50,7 +50,10 @@ InterpretResult VM::interpret(const std::string_view source) {
   if (function == nullptr) return INTERPRET_COMPILE_ERROR;
 
   push(Value{function});
-  call(function, 0);
+  ObjClosure* closure{new_closure(function)};
+  pop();
+  push(Value{closure});
+  call(closure, 0);
 
   return run();
 }
@@ -67,9 +70,9 @@ InterpretResult VM::run() {
     std::println();
 
     disassemble_instruction(
-        m_frame->function->chunk,
-        static_cast<std::size_t>(m_frame->ip -
-                                 &m_frame->function->chunk.get_code_ref(0)));
+        m_frame->closure->function->chunk,
+        static_cast<std::size_t>(
+            m_frame->ip - &m_frame->closure->function->chunk.get_code_ref(0)));
 
 #endif
 
@@ -192,6 +195,13 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_CLOSURE: {
+        ObjFunction* function{as_function(read_constant())};
+        ObjClosure* closure{new_closure(function)};
+        push(Value{closure});
+        break;
+      }
+
       case OP_DUP:
         push(m_sp[-1]);
         break;
@@ -262,7 +272,7 @@ InterpretResult VM::run() {
 std::uint8_t VM::read_byte() { return *m_frame->ip++; }
 
 Value VM::read_constant() {
-  return m_frame->function->chunk.get_constant(read_byte());
+  return m_frame->closure->function->chunk.get_constant(read_byte());
 }
 
 Value VM::read_constant_long() {
@@ -272,7 +282,7 @@ Value VM::read_constant_long() {
 
   auto ind{(ind_first_byte << 16) + (ind_second_byte << 8) + ind_third_byte};
 
-  return m_frame->function->chunk.get_constant(ind);
+  return m_frame->closure->function->chunk.get_constant(ind);
 }
 
 std::uint16_t VM::read_short() {
@@ -334,8 +344,8 @@ Value VM::peek(int distance) { return m_sp[-1 - distance]; }
 bool VM::call_value(const Value& callee, int arg_count) {
   if (callee.is_obj()) {
     switch (obj_type(callee)) {
-      case OBJ_FUNCTION:
-        return call(as_function(callee), arg_count);
+      case OBJ_CLOSURE:
+        return call(as_closure(callee), arg_count);
       case OBJ_NATIVE: {
         return call_native(as_native(callee), arg_count);
       }
@@ -347,10 +357,10 @@ bool VM::call_value(const Value& callee, int arg_count) {
   return false;
 }
 
-bool VM::call(ObjFunction* function, int arg_count) {
-  if (function->arity != arg_count) {
+bool VM::call(ObjClosure* closure, int arg_count) {
+  if (closure->function->arity != arg_count) {
     runtime_error(std::format("Expected {} received {} arguments.\n",
-                              function->arity, arg_count));
+                              closure->function->arity, arg_count));
     return false;
   }
 
@@ -360,8 +370,8 @@ bool VM::call(ObjFunction* function, int arg_count) {
   }
 
   CallFrame& frame{m_frames[m_frame_count++]};
-  frame.function = function;
-  frame.ip = &function->chunk.get_code_ref(0);
+  frame.closure = closure;
+  frame.ip = &closure->function->chunk.get_code_ref(0);
   frame.slots = m_sp - arg_count - 1;
   return true;
 }
@@ -499,7 +509,7 @@ void VM::runtime_error(const std::string_view format, ...) {
 
   for (int i{m_frame_count - 1}; i >= 0; i--) {
     CallFrame* frame{&m_frames[i]};
-    ObjFunction* function{frame->function};
+    ObjFunction* function{frame->closure->function};
     auto instruction{frame->ip - &function->chunk.get_code_ref(0) - 1};
     std::print(stderr, "[line {}] in ",
                lookup_line(function->chunk, instruction));

@@ -19,7 +19,7 @@ enum InterpretResult {
 };
 
 struct CallFrame {
-  ObjFunction* function;
+  ObjClosure* closure;
   uint8_t* ip;
   Value* slots;
 };
@@ -50,7 +50,7 @@ class VM {
   Value peek(int distance);
 
   bool call_value(const Value& callee, int arg_count);
-  bool call(ObjFunction* function, int arg_count);
+  bool call(ObjClosure* closure, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
 
   // native functions

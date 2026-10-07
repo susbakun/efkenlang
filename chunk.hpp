@@ -29,6 +29,7 @@ enum OpCode : std::uint8_t {
   OP_JUMP,
   OP_LOOP,
   OP_CALL,
+  OP_CLOSURE,
 
   OP_DUP,
 

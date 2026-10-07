@@ -68,6 +68,15 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return jump_instruction("OP_LOOP", -1, chunk, offset);
     case OP_CALL:
       return byte_instruction("OP_CALL", chunk, offset);
+    case OP_CLOSURE: {
+      offset++;
+      std::uint8_t constant{chunk.get_code(offset++)};
+      std::print("{:16} {:4}", "OP_CLOSURE", constant);
+      chunk.get_constant(constant).print_value();
+      std::println();
+      return offset;
+    }
+
     case OP_DUP:
       return simple_instruction("OP_DUP", offset);
 

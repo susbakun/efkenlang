@@ -107,7 +107,9 @@ void Compiler::function(FunctionType type) {
   compiler.block();
 
   ObjFunction* function{compiler.end_compiler()};
-  emit_constant(Value{function});
+  auto ind{compiling_chunk().add_constant(Value{function})};
+
+  emit_bytes(OP_CLOSURE, ind);
 }
 
 void Compiler::var_declration(bool is_const) {

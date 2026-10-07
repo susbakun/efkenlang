@@ -44,6 +44,14 @@ ObjNative* new_native(NativeFn function, int arity) {
   return object;
 }
 
+ObjClosure* new_closure(ObjFunction* function) {
+  ObjClosure* object{new ObjClosure{}};
+  object->type = OBJ_CLOSURE;
+  object->function = function;
+
+  return object;
+}
+
 ObjString* as_string(const Value& value) {
   return static_cast<ObjString*>(value.as_obj());
 }
@@ -57,6 +65,10 @@ ObjFunction* as_function(const Value& value) {
 
 ObjNative* as_native(const Value& value) {
   return static_cast<ObjNative*>(value.as_obj());
+}
+
+ObjClosure* as_closure(const Value& value) {
+  return static_cast<ObjClosure*>(value.as_obj());
 }
 
 bool is_obj_type(const Value& value, const ObjType type) {
@@ -76,6 +88,12 @@ std::string object_to_string(const Value& value) {
       return std::format("<native fn>");
       break;
     }
+
+    case OBJ_CLOSURE: {
+      auto function{as_closure(value)->function};
+      return std::format(
+          "{}", function->name != nullptr ? function->name->str : "<script>");
+    }
   }
 }
 
@@ -93,5 +111,11 @@ void print_object(const Value& value) {
     case OBJ_NATIVE:
       std::print("<native fn>");
       break;
+    case OBJ_CLOSURE: {
+      auto function{as_closure(value)->function};
+      return std::print(
+          "{}", function->name != nullptr ? function->name->str : "<script>");
+      break;
+    }
   }
 }
