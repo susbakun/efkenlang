@@ -1,22 +1,23 @@
 #include "obj.hpp"
-#include "chunk.hpp"
-#include "value.hpp"
-#include "vm.hpp"
+
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <print>
 
-ObjType obj_type(const Value &value) { return value.as_obj()->type; }
+#include "chunk.hpp"
+#include "value.hpp"
+#include "vm.hpp"
 
-ObjString *allocate_string(VM &vm, std::string str) {
+ObjType obj_type(const Value& value) { return value.as_obj()->type; }
+
+ObjString* allocate_string(VM& vm, std::string str) {
   auto string{vm.find_string(str)};
-  if (string)
-    return as_string(string.value());
+  if (string) return as_string(string.value());
 
-  auto *object = new ObjString{};
+  auto* object{new ObjString{}};
   object->type = OBJ_STRING;
-  object->str = str; // copy str here
+  object->str = str;  // copy str here
 
   // then move it
   vm.add_string(std::move(str), object);
@@ -24,8 +25,8 @@ ObjString *allocate_string(VM &vm, std::string str) {
   return object;
 }
 
-ObjFunction *new_function() {
-  auto *object = new ObjFunction{};
+ObjFunction* new_function() {
+  auto* object{new ObjFunction{}};
   object->type = OBJ_FUNCTION;
   object->arity = 0;
   object->name = nullptr;
@@ -34,43 +35,62 @@ ObjFunction *new_function() {
   return object;
 }
 
-ObjString *as_string(const Value &value) {
-  return static_cast<ObjString *>(value.as_obj());
-}
-std::string &as_cpp_str(const Value &value) {
-  return static_cast<ObjString *>(value.as_obj())->str;
+ObjNative* new_native(NativeFn function) {
+  auto* object{new ObjNative{}};
+  object->type = OBJ_NATIVE;
+  object->function = function;
+
+  return object;
 }
 
-ObjFunction *as_function(const Value &value) {
-  return static_cast<ObjFunction *>(value.as_obj());
+ObjString* as_string(const Value& value) {
+  return static_cast<ObjString*>(value.as_obj());
+}
+std::string& as_cpp_str(const Value& value) {
+  return static_cast<ObjString*>(value.as_obj())->str;
 }
 
-bool is_obj_type(const Value &value, const ObjType type) {
+ObjFunction* as_function(const Value& value) {
+  return static_cast<ObjFunction*>(value.as_obj());
+}
+
+NativeFn as_native(const Value& value) {
+  return static_cast<ObjNative*>(value.as_obj())->function;
+}
+
+bool is_obj_type(const Value& value, const ObjType type) {
   return value.is_obj() && value.as_obj()->type == type;
 }
 
-std::string object_to_string(const Value &value) {
+std::string object_to_string(const Value& value) {
   switch (obj_type(value)) {
-  case OBJ_STRING:
-    return std::format("{}", as_cpp_str(value));
-  case OBJ_FUNCTION: {
-    auto function{as_function(value)};
-    return std::format("{}", function->name != nullptr ? function->name->str
-                                                       : "<script>");
-  }
+    case OBJ_STRING:
+      return std::format("{}", as_cpp_str(value));
+    case OBJ_FUNCTION: {
+      auto function{as_function(value)};
+      return std::format(
+          "{}", function->name != nullptr ? function->name->str : "<script>");
+    }
+    case OBJ_NATIVE: {
+      return std::format("<native fn>");
+      break;
+    }
   }
 }
 
-void print_object(const Value &value) {
+void print_object(const Value& value) {
   switch (obj_type(value)) {
-  case OBJ_STRING:
-    std::print("{}", as_cpp_str(value));
-    break;
-  case OBJ_FUNCTION: {
-    auto function{as_function(value)};
-    std::print("{}",
-               function->name != nullptr ? function->name->str : "<script>");
-    break;
-  }
+    case OBJ_STRING:
+      std::print("{}", as_cpp_str(value));
+      break;
+    case OBJ_FUNCTION: {
+      auto function{as_function(value)};
+      std::print("{}",
+                 function->name != nullptr ? function->name->str : "<script>");
+      break;
+    }
+    case OBJ_NATIVE:
+      std::print("<native fn>");
+      break;
   }
 }

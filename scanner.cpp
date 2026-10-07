@@ -48,7 +48,7 @@ Token Scanner::scan_token() {
     case '=':
       return make_token(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
     case '<':
-      return make_token(match('=') ? TOKEN_LESS_EQUAL : TOKEN_EQUAL);
+      return make_token(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
     case '>':
       return make_token(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
 

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <print>
 #include <string>
@@ -328,11 +329,18 @@ Value VM::pop(int n) {
 
 Value VM::peek(int distance) { return m_sp[-1 - distance]; }
 
-bool VM::call_value(const Value& value, int arg_count) {
-  if (value.is_obj()) {
-    switch (obj_type(value)) {
+bool VM::call_value(const Value& callee, int arg_count) {
+  if (callee.is_obj()) {
+    switch (obj_type(callee)) {
       case OBJ_FUNCTION:
-        return call(as_function(value), arg_count);
+        return call(as_function(callee), arg_count);
+      case OBJ_NATIVE: {
+        NativeFn native{as_native(callee)};
+        Value result{native(arg_count, m_sp - arg_count)};
+        m_sp -= (arg_count + 1);
+        push(result);
+        return true;
+      }
       default:
         break;
     }
@@ -358,6 +366,19 @@ bool VM::call(ObjFunction* function, int arg_count) {
   frame.ip = &function->chunk.get_code_ref(0);
   frame.slots = m_sp - arg_count - 1;
   return true;
+}
+
+Value VM::clock_native(int arg_count, Value* args) {
+  return Value{static_cast<double>(clock()) / CLOCKS_PER_SEC};
+}
+
+void VM::define_native(const std::string& name, NativeFn function) {
+  auto name_obj{allocate_string(*this, name)};
+  push(Value{name_obj});
+  push(new_native(function));
+  m_globals.insert({as_string(m_stack[0]), m_stack[1]});
+  pop();
+  pop();
 }
 
 void VM::add_string(std::string key, ObjString* value) {

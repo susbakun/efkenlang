@@ -5,7 +5,7 @@
 
 class VM;
 
-enum ObjType { OBJ_STRING, OBJ_FUNCTION };
+enum ObjType { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE };
 
 struct Obj {
   ObjType type;
@@ -23,15 +23,22 @@ struct ObjFunction : public Obj {
   ObjString* name;
 };
 
+using NativeFn = Value (*)(int arg_count, Value* args);
+
+struct ObjNative : public Obj {
+  NativeFn function;
+};
+
 ObjType obj_type(const Value& value);
 
 ObjString* allocate_string(VM& vm, std::string str);
 ObjFunction* new_function();
+ObjNative* new_native(NativeFn function);
 
 ObjString* as_string(const Value& value);
 std::string& as_cpp_str(const Value& value);
-
 ObjFunction* as_function(const Value& value);
+NativeFn as_native(const Value& value);
 
 bool is_obj_type(const Value& value, const ObjType type);
 

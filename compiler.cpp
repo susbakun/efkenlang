@@ -258,12 +258,12 @@ void Compiler::if_statement() {
 
   if (match(TOKEN_ELSE)) {
     statement();
-    patch_jump(else_jump);
   }
+  patch_jump(else_jump);
 }
 
 void Compiler::return_statement() {
-  if (m_function->type == TYPE_SCRIPT) {
+  if (m_type == TYPE_SCRIPT) {
     error("Can't return from top-level code");
   }
 
@@ -591,7 +591,7 @@ int Compiler::emit_jump(std::uint8_t instruction) {
 }
 
 void Compiler::patch_jump(int offset) {
-  auto cc{compiling_chunk()};
+  auto& cc{compiling_chunk()};
   // -2 to adjust for the bytecode for the jump offset itself.
   int jump{static_cast<int>(cc.code_size()) - offset - 2};
 

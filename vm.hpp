@@ -26,7 +26,7 @@ struct CallFrame {
 
 class VM {
  public:
-  VM() = default;
+  VM() { define_native(std::string("clock"), clock_native); }
 
   InterpretResult interpret(const std::string_view source);
 
@@ -41,8 +41,11 @@ class VM {
   Value pop(int n);
   Value peek(int distance);
 
-  bool call_value(const Value& value, int arg_count);
+  bool call_value(const Value& callee, int arg_count);
   bool call(ObjFunction* function, int arg_count);
+
+  static Value clock_native(int arg_count, Value* args);
+  void define_native(const std::string& name, NativeFn function);
 
   std::uint8_t read_byte();
   Value read_constant();
