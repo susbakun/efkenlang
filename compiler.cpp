@@ -219,6 +219,8 @@ void Compiler::statement() {
     print_statement();
   } else if (match(TOKEN_IF)) {
     if_statement();
+  } else if (match(TOKEN_RETURN)) {
+    return_statement();
   } else if (match(TOKEN_WHILE)) {
     while_statement();
   } else if (match(TOKEN_FOR)) {
@@ -257,6 +259,20 @@ void Compiler::if_statement() {
   if (match(TOKEN_ELSE)) {
     statement();
     patch_jump(else_jump);
+  }
+}
+
+void Compiler::return_statement() {
+  if (m_function->type == TYPE_SCRIPT) {
+    error("Can't return from top-level code");
+  }
+
+  if (match(TOKEN_SEMICOLON)) {
+    emit_return();
+  } else {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after 'return'.");
+    emit_byte(OP_RETURN);
   }
 }
 

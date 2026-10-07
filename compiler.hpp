@@ -130,6 +130,7 @@ class Compiler {
   void statement();
   void print_statement();
   void if_statement();
+  void return_statement();
   void switch_statement();
   void while_statement();
   void for_statement();
