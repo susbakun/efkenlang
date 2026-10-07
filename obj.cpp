@@ -35,10 +35,11 @@ ObjFunction* new_function() {
   return object;
 }
 
-ObjNative* new_native(NativeFn function) {
+ObjNative* new_native(NativeFn function, int arity) {
   auto* object{new ObjNative{}};
   object->type = OBJ_NATIVE;
   object->function = function;
+  object->arity = arity;
 
   return object;
 }
@@ -54,8 +55,8 @@ ObjFunction* as_function(const Value& value) {
   return static_cast<ObjFunction*>(value.as_obj());
 }
 
-NativeFn as_native(const Value& value) {
-  return static_cast<ObjNative*>(value.as_obj())->function;
+ObjNative* as_native(const Value& value) {
+  return static_cast<ObjNative*>(value.as_obj());
 }
 
 bool is_obj_type(const Value& value, const ObjType type) {
