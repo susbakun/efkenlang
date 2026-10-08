@@ -23,6 +23,7 @@ struct ObjFunction : public Obj {
   int arity;
   Chunk chunk;
   ObjString* name;
+  int upvalue_count{};
 };
 
 using NativeFn = std::optional<Value> (VM::*)(int arg_count, Value* args);

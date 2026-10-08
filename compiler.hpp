@@ -40,6 +40,9 @@ class Compiler;
 
 using ParseFn = void (Compiler::*)(bool can_assign);
 
+// (index, is_const)
+using VarInfo = std::tuple<int, bool>;
+
 struct ParseRule {
   ParseFn prefix;
   ParseFn infix;
@@ -54,6 +57,12 @@ struct Global {
 struct Local {
   Token name;
   int depth{};
+  bool is_const;
+};
+
+struct Upvalue {
+  std::uint8_t index;
+  bool is_local;
   bool is_const;
 };
 
@@ -82,6 +91,7 @@ class Compiler {
 
   Compiler(Compiler& enclosing, FunctionType type)
       : m_vm{enclosing.m_vm},
+        m_enclosing{&enclosing},
         m_type{type},
         m_scanner{enclosing.m_scanner},
         m_parser{enclosing.m_parser} {
@@ -126,6 +136,7 @@ class Compiler {
   bool identifiers_equal(Token& name1, Token& name2);
 
   void add_local(Token& name, bool is_const);
+  VarInfo add_upvalue(std::uint8_t index, bool is_local, bool is_const);
   void define_variable(std::uint8_t global);
   void statement();
   void print_statement();
@@ -148,7 +159,8 @@ class Compiler {
   void string(bool can_assign);
   void variable(bool can_assign);
   void named_variable(Token& name, bool can_assign);
-  std::tuple<int, bool> resolve_local(Token& name);
+  VarInfo resolve_local(Token& name);
+  VarInfo resolve_up_value(Token& name);
   std::uint8_t argument_list();
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
@@ -176,6 +188,7 @@ class Compiler {
   void error_at(Token& token, const std::string_view message);
 
   VM& m_vm;
+  Compiler* m_enclosing{nullptr};
   ObjFunction* m_function{new_function()};
   FunctionType m_type;
   Scanner& m_scanner;
@@ -185,6 +198,7 @@ class Compiler {
   int m_scope_depth{};
   int m_local_count{};
   std::unordered_map<std::string, std::uint8_t> m_local_slots{};
+  std::array<Upvalue, UINT8_COUNT> m_upvalues{};
   // kept for continue statements
   std::vector<Loop> m_target_loops{};
 

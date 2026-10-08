@@ -110,6 +110,11 @@ void Compiler::function(FunctionType type) {
   auto ind{compiling_chunk().add_constant(Value{function})};
 
   emit_bytes(OP_CLOSURE, ind);
+
+  for (std::size_t i{}; i < function->upvalue_count; i++) {
+    emit_byte(compiler.m_upvalues[i].is_local ? 1 : 0);
+    emit_byte(compiler.m_upvalues[i].index);
+  }
 }
 
 void Compiler::var_declration(bool is_const) {
@@ -204,6 +209,30 @@ void Compiler::add_local(Token& name, bool is_const) {
 
   m_local_slots.insert({name_str, m_local_count});
   m_locals[m_local_count++] = local;
+}
+
+VarInfo Compiler::add_upvalue(std::uint8_t index, bool is_local,
+                              bool is_const) {
+  for (std::size_t i{}; i < m_function->upvalue_count; i++) {
+    Upvalue& upvalue{m_upvalues[i]};
+    if (upvalue.index == index && upvalue.is_local == is_local) {
+      return std::make_tuple(i, is_const);
+    }
+  }
+
+  int upvalue_count{m_function->upvalue_count};
+
+  if (upvalue_count == UINT8_COUNT) {
+    error("Too many closure variables in function.");
+    return std::make_tuple(0, is_const);
+  }
+
+  m_upvalues[upvalue_count].is_local = is_local;
+  m_upvalues[upvalue_count].is_const = is_const;
+  m_upvalues[upvalue_count].index = index;
+
+  m_function->upvalue_count++;
+  return std::make_tuple(upvalue_count, is_const);
 }
 
 void Compiler::define_variable(std::uint8_t global) {
@@ -510,6 +539,10 @@ void Compiler::named_variable(Token& name, bool can_assign) {
   if (std::get<0>(arg) != -1) {
     get_op = OP_GET_LOCAL;
     set_op = OP_SET_LOCAL;
+  } else if (auto up{resolve_up_value(name)}; std::get<0>(up) != -1) {
+    arg = up;
+    get_op = OP_GET_UPVALUE;
+    set_op = OP_SET_UPVALUE;
   } else {
     arg = identifier_constant(name);
     get_op = OP_GET_GLOBAL;
@@ -527,7 +560,7 @@ void Compiler::named_variable(Token& name, bool can_assign) {
   }
 }
 
-std::tuple<int, bool> Compiler::resolve_local(Token& name) {
+VarInfo Compiler::resolve_local(Token& name) {
   auto name_str{std::string(name.start, name.length)};
   auto it{m_local_slots.find(name_str)};
 
@@ -539,6 +572,28 @@ std::tuple<int, bool> Compiler::resolve_local(Token& name) {
   }
 
   return std::make_tuple(index, m_locals[index].is_const);
+}
+
+VarInfo Compiler::resolve_up_value(Token& name) {
+  if (m_enclosing == nullptr) return std::make_tuple(-1, false);
+
+  auto local{m_enclosing->resolve_local(name)};
+  if (std::get<0>(local) != -1) {
+    auto index{static_cast<std::uint8_t>(std::get<0>(local))};
+    auto is_const{std::get<1>(local)};
+
+    return add_upvalue(index, true, is_const);
+  }
+
+  auto upvalue{m_enclosing->resolve_up_value(name)};
+  if (std::get<0>(upvalue) != -1) {
+    auto index{static_cast<std::uint8_t>(std::get<0>(upvalue))};
+    auto is_const{std::get<1>(upvalue)};
+
+    return add_upvalue(index, false, is_const);
+  }
+
+  return std::make_tuple(-1, false);
 }
 
 std::uint8_t Compiler::argument_list() {

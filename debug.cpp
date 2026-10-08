@@ -5,6 +5,7 @@
 #include <print>
 
 #include "chunk.hpp"
+#include "obj.hpp"
 
 void disassemble_chunk(Chunk& chunk, const std::string_view name) {
   std::println("== {} ==", name);
@@ -55,6 +56,10 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return constant_instruction("OP_GET_GLOBAL", chunk, offset);
     case OP_SET_GLOBAL:
       return constant_instruction("OP_SET_GLOBAL", chunk, offset);
+    case OP_GET_UPVALUE:
+      return byte_instruction("OP_GET_UPVALUE", chunk, offset);
+    case OP_SET_UPVALUE:
+      return byte_instruction("OP_SET_UPVALUE", chunk, offset);
     case OP_GET_LOCAL:
       return byte_instruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
@@ -71,9 +76,18 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
     case OP_CLOSURE: {
       offset++;
       std::uint8_t constant{chunk.get_code(offset++)};
-      std::print("{:16} {:4}", "OP_CLOSURE", constant);
+      std::print("{:16} {:4} ", "OP_CLOSURE", constant);
       chunk.get_constant(constant).print_value();
       std::println();
+
+      ObjFunction* function{as_function(chunk.get_constant(constant))};
+      for (std::size_t i{}; i < function->upvalue_count; i++) {
+        int is_local{chunk.get_code(offset++)};
+        int index{chunk.get_code(offset++)};
+        std::println("{:4}      |                     {} {}", offset - 2,
+                     is_local ? "local" : "upvalue", index);
+      }
+
       return offset;
     }
 
