@@ -223,6 +223,11 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_CLOSE_UPVALUE:
+        close_upvalues(m_sp - 1);
+        pop();
+        break;
+
       case OP_DUP:
         push(m_sp[-1]);
         break;
@@ -273,6 +278,7 @@ InterpretResult VM::run() {
 
       case OP_RETURN: {
         Value result{pop()};
+        close_upvalues(m_frame->slots);
         m_frame_count--;
         // end of the program
         if (m_frame_count == 0) {
@@ -378,9 +384,27 @@ bool VM::call_value(const Value& callee, int arg_count) {
   return false;
 }
 
-ObjUpvalue* VM::capture_upvalue(Value& value) {
-  ObjUpvalue* created_upvalue{new_upvalue(value)};
+ObjUpvalue* VM::capture_upvalue(Value& local) {
+  auto it{m_open_upvalues.begin()};
+  for (; it != m_open_upvalues.end(); it++) {
+    if ((*it)->location == &local) return *it;
+    if ((*it)->location < &local) break;
+  }
+
+  ObjUpvalue* created_upvalue{new_upvalue(local)};
+  m_open_upvalues.insert(it, created_upvalue);
   return created_upvalue;
+}
+
+void VM::close_upvalues(const Value& last) {
+  auto it{m_open_upvalues.begin()};
+  while (it != m_open_upvalues.end() && (*it)->location >= &last) {
+    ObjUpvalue* up{*it};
+    up->closed = *up->location;
+    up->location = &up->closed;
+    ++it;
+  }
+  m_open_upvalues.erase(m_open_upvalues.begin(), it);
 }
 
 bool VM::call(ObjClosure* closure, int arg_count) {

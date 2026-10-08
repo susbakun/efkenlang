@@ -50,7 +50,8 @@ class VM {
   Value peek(int distance);
 
   bool call_value(const Value& callee, int arg_count);
-  ObjUpvalue* capture_upvalue(Value& value);
+  ObjUpvalue* capture_upvalue(Value& local);
+  void close_upvalues(const Value& last);
   bool call(ObjClosure* closure, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
 
@@ -81,6 +82,7 @@ class VM {
   std::array<CallFrame, FRAMES_MAX> m_frames{};
   int m_frame_count{};
   CallFrame* m_frame{&m_frames[0]};
+  std::vector<ObjUpvalue*> m_open_upvalues{};
   std::array<Value, STACK_MAX> m_stack{};
   Value* m_sp{m_stack.data()};
   std::unordered_map<std::string, ObjString*> m_strings{};

@@ -58,6 +58,7 @@ ObjUpvalue* new_upvalue(Value& slot) {
   ObjUpvalue* object{new ObjUpvalue{}};
   object->type = OBJ_UPVALUE;
   object->location = &slot;
+  object->closed = Value{};
 
   return object;
 }

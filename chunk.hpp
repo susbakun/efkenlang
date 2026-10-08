@@ -33,6 +33,7 @@ enum OpCode : std::uint8_t {
   OP_CALL,
   OP_CLOSURE,
 
+  OP_CLOSE_UPVALUE,
   OP_DUP,
 
   // binary

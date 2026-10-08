@@ -58,6 +58,7 @@ struct Local {
   Token name;
   int depth{};
   bool is_const;
+  bool is_captured{false};
 };
 
 struct Upvalue {

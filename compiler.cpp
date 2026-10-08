@@ -204,6 +204,7 @@ void Compiler::add_local(Token& name, bool is_const) {
   local.depth = -1;
   local.name = name;
   local.is_const = is_const;
+  local.is_captured = false;
 
   auto name_str{std::string(name.start, name.length)};
 
@@ -468,16 +469,15 @@ void Compiler::end_scope() {
 }
 
 void Compiler::discard_locals(int depth) {
-  double n{0};
-
   while (m_local_count > 0 && m_locals[m_local_count - 1].depth > depth) {
-    n++;
+    if (m_locals[m_local_count - 1].is_captured) {
+      emit_byte(OP_CLOSE_UPVALUE);
+    } else {
+      emit_byte(OP_POP);
+    }
+
     m_local_count--;
   }
-
-  auto ind{compiling_chunk().add_constant(Value{n})};
-
-  emit_bytes(OP_POPN, ind);
 }
 
 void Compiler::expression_statement() {
@@ -581,6 +581,8 @@ VarInfo Compiler::resolve_up_value(Token& name) {
   if (std::get<0>(local) != -1) {
     auto index{static_cast<std::uint8_t>(std::get<0>(local))};
     auto is_const{std::get<1>(local)};
+
+    m_enclosing->m_locals[index].is_captured = true;
 
     return add_upvalue(index, true, is_const);
   }

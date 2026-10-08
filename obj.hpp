@@ -21,6 +21,7 @@ struct ObjString : public Obj {
 
 struct ObjUpvalue : public Obj {
   Value* location;
+  Value closed;
 };
 
 struct ObjFunction : public Obj {
