@@ -35,6 +35,16 @@ ObjFunction* new_function() {
   return object;
 }
 
+ObjClosure* new_closure(ObjFunction* function) {
+  ObjClosure* object{new ObjClosure{}};
+  object->type = OBJ_CLOSURE;
+  object->function = function;
+  object->upvalues.assign(function->upvalue_count, nullptr);
+  object->upvalue_count = function->upvalue_count;
+
+  return object;
+}
+
 ObjNative* new_native(NativeFn function, int arity) {
   ObjNative* object{new ObjNative{}};
   object->type = OBJ_NATIVE;
@@ -44,10 +54,10 @@ ObjNative* new_native(NativeFn function, int arity) {
   return object;
 }
 
-ObjClosure* new_closure(ObjFunction* function) {
-  ObjClosure* object{new ObjClosure{}};
-  object->type = OBJ_CLOSURE;
-  object->function = function;
+ObjUpvalue* new_upvalue(Value& slot) {
+  ObjUpvalue* object{new ObjUpvalue{}};
+  object->type = OBJ_UPVALUE;
+  object->location = &slot;
 
   return object;
 }
@@ -84,15 +94,19 @@ std::string object_to_string(const Value& value) {
       return std::format(
           "{}", function->name != nullptr ? function->name->str : "<script>");
     }
-    case OBJ_NATIVE: {
-      return std::format("<native fn>");
-      break;
-    }
 
     case OBJ_CLOSURE: {
       auto function{as_closure(value)->function};
       return std::format(
           "{}", function->name != nullptr ? function->name->str : "<script>");
+    }
+
+    case OBJ_UPVALUE:
+      return std::format("upvalue");
+
+    case OBJ_NATIVE: {
+      return std::format("<native fn>");
+      break;
     }
   }
 }
@@ -108,14 +122,19 @@ void print_object(const Value& value) {
                  function->name != nullptr ? function->name->str : "<script>");
       break;
     }
+    case OBJ_CLOSURE: {
+      auto function{as_closure(value)->function};
+      std::print("{}",
+                 function->name != nullptr ? function->name->str : "<script>");
+      break;
+    }
+
+    case OBJ_UPVALUE:
+      std::print("upvalue");
+      break;
+
     case OBJ_NATIVE:
       std::print("<native fn>");
       break;
-    case OBJ_CLOSURE: {
-      auto function{as_closure(value)->function};
-      return std::print(
-          "{}", function->name != nullptr ? function->name->str : "<script>");
-      break;
-    }
   }
 }

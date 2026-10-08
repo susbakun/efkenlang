@@ -50,6 +50,7 @@ class VM {
   Value peek(int distance);
 
   bool call_value(const Value& callee, int arg_count);
+  ObjUpvalue* capture_upvalue(Value& value);
   bool call(ObjClosure* closure, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
 

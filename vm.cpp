@@ -156,6 +156,16 @@ InterpretResult VM::run() {
 
         break;
       }
+      case OP_GET_UPVALUE: {
+        auto slot{read_byte()};
+        push(*m_frame->closure->upvalues[slot]->location);
+        break;
+      }
+      case OP_SET_UPVALUE: {
+        auto slot{read_byte()};
+        *m_frame->closure->upvalues[slot]->location = peek(0);
+        break;
+      }
 
       case OP_GET_LOCAL: {
         auto slot{read_byte()};
@@ -199,6 +209,17 @@ InterpretResult VM::run() {
         ObjFunction* function{as_function(read_constant())};
         ObjClosure* closure{new_closure(function)};
         push(Value{closure});
+
+        for (std::size_t i{}; i < closure->upvalue_count; i++) {
+          auto is_local{read_byte()};
+          auto index{read_byte()};
+          if (is_local) {
+            closure->upvalues[i] = capture_upvalue(*(m_frame->slots + index));
+          } else {
+            closure->upvalues[i] = m_frame->closure->upvalues[index];
+          }
+        }
+
         break;
       }
 
@@ -355,6 +376,11 @@ bool VM::call_value(const Value& callee, int arg_count) {
   }
   runtime_error("Can only call function types.");
   return false;
+}
+
+ObjUpvalue* VM::capture_upvalue(Value& value) {
+  ObjUpvalue* created_upvalue{new_upvalue(value)};
+  return created_upvalue;
 }
 
 bool VM::call(ObjClosure* closure, int arg_count) {
