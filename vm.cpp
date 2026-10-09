@@ -555,21 +555,27 @@ bool VM::is_stack_full() const {
 void VM::collect_garbadge() {
 #ifdef DEBUG_LOG_GC
   std::println("-- gc begin");
+  std::size_t before{m_bytes_allocated};
 #endif
 
   mark_roots();
   trace_references();
   remove_white_strings();
   sweep();
+  m_next_gc = m_bytes_allocated * GC_HEAP_GROW_FACTOR;
 
 #ifdef DEBUG_LOG_GC
   std::println("-- gc end");
+  std::println("   collected {} bytes (from {} to {}) next at {}",
+               before - m_bytes_allocated, before, m_bytes_allocated,
+               m_next_gc);
 #endif
 }
 
 void VM::mark_roots() {
   for (Value* slot{m_stack.data()}; slot < m_sp; slot++) mark_value(*slot);
-  for (std::size_t i{}; i < m_frame_count; i++) mark_object(m_frame[i].closure);
+  for (std::size_t i{}; i < m_frame_count; i++)
+    mark_object(m_frames[i].closure);
   for (ObjUpvalue* up : m_open_upvalues) mark_object(up);
 
   for (auto& [name, value] : m_globals) {
@@ -608,8 +614,8 @@ void VM::mark_object(Obj* object) {
 void VM::trace_references() {
   while (!m_gray_stacks.empty()) {
     Obj* object{m_gray_stacks.back()};
-    blacken_object(object);
     m_gray_stacks.pop_back();
+    blacken_object(object);
   }
 }
 

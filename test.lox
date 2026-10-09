@@ -1,32 +1,14 @@
-fun vec2(a, b) {
-  var x = a;
-  var y = b;
-
-  fun dispatch(msg, other) {
-    if (msg == 0) {return x;}
-    if (msg == 1) {return y;}
-    if (msg == 2) {return vec2(x + get_x(other), y + get_y(other));}
+// 3. Allocate temporary closures.
+var i = 0;
+while (i < 1000) {
+  fun makeTemp() {
+    var value = "temporary" + " object";
+    fun getValue() {
+      return value;
+    }
+    return getValue;
   }
 
-  return dispatch;
+  var temp = makeTemp();
+  i = i + 1;
 }
-
-fun get_x(v) {
-  return v(0, nil);
-}
-
-fun get_y(v) {
-  return v(1, nil);
-}
-
-fun add(v1, v2) {
-  return v1(2, v2);
-}
-
-var v = vec2(3, 4);
-print get_x(v);
-print get_y(v);
-
-var v2 = vec2(1, 1);
-var v3 = add(v, v2);
-print get_x(v3);

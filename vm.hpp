@@ -2,6 +2,7 @@
 
 #include <array>
 #include <optional>
+#include <print>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -126,7 +127,8 @@ inline T* VM::allocate_object(ObjType type, std::size_t extra) {
   m_bytes_allocated += sizeof(T);
 
 #ifdef DEBUG_LOG_GC
-  std::println("{} allocate {} for {}", static_cast<void*>(object), size, type);
+  std::println("{} allocate {} for {}", static_cast<void*>(object),
+               object->size, static_cast<int>(type));
 #endif
 
   return object;
