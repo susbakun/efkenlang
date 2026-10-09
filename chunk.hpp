@@ -72,8 +72,9 @@ class Chunk {
   std::size_t constants_size() const;
   std::size_t lines_size() const;
 
+  ValueArray m_constants{};
+
  private:
   std::vector<std::uint8_t> m_code{};
   std::vector<LineRun> m_lines{};
-  ValueArray m_constants{};
 };

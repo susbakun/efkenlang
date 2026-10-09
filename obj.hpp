@@ -11,6 +11,8 @@ enum ObjType { OBJ_STRING, OBJ_FUNCTION, OBJ_CLOSURE, OBJ_UPVALUE, OBJ_NATIVE };
 
 struct Obj {
   ObjType type;
+  bool is_marked{false};
+  std::size_t size{};  // set at allocation, subtracted when freed
 
   virtual ~Obj() = default;
 };
@@ -47,10 +49,10 @@ struct ObjNative : public Obj {
 ObjType obj_type(const Value& value);
 
 ObjString* allocate_string(VM& vm, std::string str);
-ObjFunction* new_function();
-ObjClosure* new_closure(ObjFunction* function);
-ObjNative* new_native(NativeFn function, int arity);
-ObjUpvalue* new_upvalue(Value& slot);
+ObjFunction* new_function(VM& vm);
+ObjClosure* new_closure(VM& vm, ObjFunction* function);
+ObjNative* new_native(VM& vm, NativeFn function, int arity);
+ObjUpvalue* new_upvalue(VM& vm, Value& slot);
 
 ObjString* as_string(const Value& value);
 std::string& as_cpp_str(const Value& value);

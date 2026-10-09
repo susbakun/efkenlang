@@ -87,6 +87,8 @@ class Compiler {
 
     std::string fname_str{""};
 
+    m_vm.set_compiler(this);
+
     m_local_slots.insert({fname_str, 0});
   }
 
@@ -111,11 +113,16 @@ class Compiler {
           enclosing.m_parser.previous.start,
           static_cast<std::size_t>(enclosing.m_parser.previous.length)};
 
+      m_vm.set_compiler(this);
+
       m_function->name = allocate_string(enclosing.m_vm, name);
     }
   }
 
   ObjFunction* compile();
+
+  Compiler* enclosing() const;
+  ObjFunction* get_function() const;
 
  private:
   void advance();
@@ -190,7 +197,7 @@ class Compiler {
 
   VM& m_vm;
   Compiler* m_enclosing{nullptr};
-  ObjFunction* m_function{new_function()};
+  ObjFunction* m_function{new_function(m_vm)};
   FunctionType m_type;
   Scanner& m_scanner;
   Parser& m_parser;

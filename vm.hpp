@@ -10,7 +10,7 @@
 #include "obj.hpp"
 #include "value.hpp"
 
-#define STACK_MAX 256
+class Compiler;
 
 enum InterpretResult {
   INTERPRET_OK,
@@ -41,6 +41,12 @@ class VM {
   void add_string(std::string key, ObjString* value);
   std::optional<Value> find_string(const std::string& key);
 
+  template <typename T>
+  T* allocate_object(ObjType type, std::size_t extra = 0);
+  void set_compiler(Compiler* c);
+
+  ~VM();
+
  private:
   InterpretResult run();
 
@@ -51,7 +57,7 @@ class VM {
 
   bool call_value(const Value& callee, int arg_count);
   ObjUpvalue* capture_upvalue(Value& local);
-  void close_upvalues(const Value& last);
+  void close_upvalues(const Value* last);
   bool call(ObjClosure* closure, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
 
@@ -76,6 +82,17 @@ class VM {
 
   bool is_stack_full() const;
 
+  void collect_garbadge();
+  void mark_roots();
+  void mark_array(const ValueArray& array);
+  void mark_value(const Value& value);
+  void mark_object(Obj* object);
+  void trace_references();
+  void blacken_object(Obj* object);
+  void remove_white_strings();
+  void free_object(Obj* object);
+  void sweep();
+
   void runtime_error(const std::string_view format, ...);
   void reset_stack();
 
@@ -87,4 +104,30 @@ class VM {
   Value* m_sp{m_stack.data()};
   std::unordered_map<std::string, ObjString*> m_strings{};
   std::unordered_map<ObjString*, Value> m_globals{};
+  std::vector<Obj*> m_objects{};
+  std::vector<Obj*> m_gray_stacks{};
+  std::size_t m_bytes_allocated{};
+  std::size_t m_next_gc{1024 * 1024};
+  Compiler* m_current_compiler{nullptr};
 };
+
+template <typename T>
+inline T* VM::allocate_object(ObjType type, std::size_t extra) {
+#ifdef DEBUG_STRESS_GC
+  collect_garbage();
+#endif
+
+  if (m_bytes_allocated > m_next_gc) collect_garbadge();
+
+  T* object{new T{}};
+  object->type = type;
+  object->size = sizeof(T) + extra;
+  m_objects.push_back(object);
+  m_bytes_allocated += sizeof(T);
+
+#ifdef DEBUG_LOG_GC
+  std::println("{} allocate {} for {}", static_cast<void*>(object), size, type);
+#endif
+
+  return object;
+}

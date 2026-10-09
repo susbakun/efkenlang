@@ -1,5 +1,3 @@
-#include "cpp_perf.hpp"
-#include "vm.hpp"
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -7,7 +5,9 @@
 #include <string>
 #include <string_view>
 
-#define MEASURE
+#include "common.hpp"
+#include "cpp_perf.hpp"
+#include "vm.hpp"
 
 void repl() {
   char line[1024];
@@ -19,8 +19,7 @@ void repl() {
     std::string line{};
     std::getline(std::cin, line);
 
-    if (line == "")
-      break;
+    if (line == "") break;
 
     vm.interpret(line);
   }
@@ -56,13 +55,11 @@ void run_file(const std::string_view path) {
 
   InterpretResult result{vm.interpret(source)};
 
-  if (result == INTERPRET_COMPILE_ERROR)
-    exit(65);
-  if (result == INTERPRET_RUNTIME_ERROR)
-    exit(70);
+  if (result == INTERPRET_COMPILE_ERROR) exit(65);
+  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
 #ifdef MEASURE
   perf::start();
 #endif

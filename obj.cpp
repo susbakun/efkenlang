@@ -12,11 +12,9 @@
 ObjType obj_type(const Value& value) { return value.as_obj()->type; }
 
 ObjString* allocate_string(VM& vm, std::string str) {
-  auto string{vm.find_string(str)};
-  if (string) return as_string(string.value());
+  if (auto existing{vm.find_string(str)}) return as_string(*existing);
 
-  auto* object{new ObjString{}};
-  object->type = OBJ_STRING;
+  auto* object{vm.allocate_object<ObjString>(OBJ_STRING)};
   object->str = str;  // copy str here
 
   // then move it
@@ -25,8 +23,8 @@ ObjString* allocate_string(VM& vm, std::string str) {
   return object;
 }
 
-ObjFunction* new_function() {
-  auto* object{new ObjFunction{}};
+ObjFunction* new_function(VM& vm) {
+  auto* object{vm.allocate_object<ObjFunction>(OBJ_FUNCTION)};
   object->type = OBJ_FUNCTION;
   object->arity = 0;
   object->name = nullptr;
@@ -35,8 +33,8 @@ ObjFunction* new_function() {
   return object;
 }
 
-ObjClosure* new_closure(ObjFunction* function) {
-  ObjClosure* object{new ObjClosure{}};
+ObjClosure* new_closure(VM& vm, ObjFunction* function) {
+  ObjClosure* object{vm.allocate_object<ObjClosure>(OBJ_CLOSURE)};
   object->type = OBJ_CLOSURE;
   object->function = function;
   object->upvalues.assign(function->upvalue_count, nullptr);
@@ -45,8 +43,8 @@ ObjClosure* new_closure(ObjFunction* function) {
   return object;
 }
 
-ObjNative* new_native(NativeFn function, int arity) {
-  ObjNative* object{new ObjNative{}};
+ObjNative* new_native(VM& vm, NativeFn function, int arity) {
+  ObjNative* object{vm.allocate_object<ObjNative>(OBJ_NATIVE)};
   object->type = OBJ_NATIVE;
   object->function = function;
   object->arity = arity;
@@ -54,8 +52,8 @@ ObjNative* new_native(NativeFn function, int arity) {
   return object;
 }
 
-ObjUpvalue* new_upvalue(Value& slot) {
-  ObjUpvalue* object{new ObjUpvalue{}};
+ObjUpvalue* new_upvalue(VM& vm, Value& slot) {
+  ObjUpvalue* object{vm.allocate_object<ObjUpvalue>(OBJ_UPVALUE)};
   object->type = OBJ_UPVALUE;
   object->location = &slot;
   object->closed = Value{};

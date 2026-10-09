@@ -17,8 +17,6 @@
 #include "scanner.hpp"
 #include "value.hpp"
 
-#define DEBUG_PRINT_CODE
-
 ObjFunction* Compiler::compile() {
   advance();
   while (!match(TOKEN_EOF)) {
@@ -28,6 +26,10 @@ ObjFunction* Compiler::compile() {
 
   return m_parser.had_error ? nullptr : function;
 }
+
+Compiler* Compiler::enclosing() const { return m_enclosing; }
+
+ObjFunction* Compiler::get_function() const { return m_function; }
 
 void Compiler::advance() {
   m_parser.previous = m_parser.current;
@@ -638,6 +640,8 @@ ObjFunction* Compiler::end_compiler() {
                                              : "<script>");
   }
 #endif
+
+  m_vm.set_compiler(m_enclosing);
 
   return function;
 }

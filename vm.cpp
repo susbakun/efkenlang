@@ -14,13 +14,12 @@
 #include <thread>
 
 #include "chunk.hpp"
+#include "common.hpp"
 #include "compiler.hpp"
 #include "debug.hpp"
 #include "obj.hpp"
 #include "scanner.hpp"
 #include "value.hpp"
-
-#define DEBUG_TRACE_EXECUTION
 
 #define BINARY_OP(op)                                   \
   do {                                                  \
@@ -50,13 +49,15 @@ InterpretResult VM::interpret(const std::string_view source) {
   if (function == nullptr) return INTERPRET_COMPILE_ERROR;
 
   push(Value{function});
-  ObjClosure* closure{new_closure(function)};
+  ObjClosure* closure{new_closure(*this, function)};
   pop();
   push(Value{closure});
   call(closure, 0);
 
   return run();
 }
+
+void VM::set_compiler(Compiler* c) { m_current_compiler = c; }
 
 InterpretResult VM::run() {
   while (true) {
@@ -207,7 +208,7 @@ InterpretResult VM::run() {
 
       case OP_CLOSURE: {
         ObjFunction* function{as_function(read_constant())};
-        ObjClosure* closure{new_closure(function)};
+        ObjClosure* closure{new_closure(*this, function)};
         push(Value{closure});
 
         for (std::size_t i{}; i < closure->upvalue_count; i++) {
@@ -391,14 +392,14 @@ ObjUpvalue* VM::capture_upvalue(Value& local) {
     if ((*it)->location < &local) break;
   }
 
-  ObjUpvalue* created_upvalue{new_upvalue(local)};
+  ObjUpvalue* created_upvalue{new_upvalue(*this, local)};
   m_open_upvalues.insert(it, created_upvalue);
   return created_upvalue;
 }
 
-void VM::close_upvalues(const Value& last) {
+void VM::close_upvalues(const Value* last) {
   auto it{m_open_upvalues.begin()};
-  while (it != m_open_upvalues.end() && (*it)->location >= &last) {
+  while (it != m_open_upvalues.end() && (*it)->location >= last) {
     ObjUpvalue* up{*it};
     up->closed = *up->location;
     up->location = &up->closed;
@@ -529,7 +530,7 @@ std::optional<Value> VM::exit_native(int arg_count, Value* args) {
 void VM::define_native(const std::string& name, NativeFn function, int arity) {
   auto name_obj{allocate_string(*this, name)};
   push(Value{name_obj});
-  push(new_native(function, arity));
+  push(new_native(*this, function, arity));
   m_globals.insert({as_string(m_stack[0]), m_stack[1]});
   pop();
   pop();
@@ -549,6 +550,129 @@ std::optional<Value> VM::find_string(const std::string& key) {
 
 bool VM::is_stack_full() const {
   return m_sp == (m_stack.data() + m_stack.size());
+}
+
+void VM::collect_garbadge() {
+#ifdef DEBUG_LOG_GC
+  std::println("-- gc begin");
+#endif
+
+  mark_roots();
+  trace_references();
+  remove_white_strings();
+  sweep();
+
+#ifdef DEBUG_LOG_GC
+  std::println("-- gc end");
+#endif
+}
+
+void VM::mark_roots() {
+  for (Value* slot{m_stack.data()}; slot < m_sp; slot++) mark_value(*slot);
+  for (std::size_t i{}; i < m_frame_count; i++) mark_object(m_frame[i].closure);
+  for (ObjUpvalue* up : m_open_upvalues) mark_object(up);
+
+  for (auto& [name, value] : m_globals) {
+    mark_object(name);
+    mark_value(value);
+  }
+
+  for (Compiler* c{m_current_compiler}; c != nullptr; c = c->enclosing()) {
+    mark_object(c->get_function());
+  }
+}
+
+void VM::mark_array(const ValueArray& array) {
+  for (auto& value : array.m_values) {
+    mark_value(value);
+  }
+}
+
+void VM::mark_value(const Value& value) {
+  if (value.is_obj()) mark_object(value.as_obj());
+}
+
+void VM::mark_object(Obj* object) {
+  if (object == nullptr || object->is_marked) return;
+
+#ifdef DEBUG_LOG_GC
+  std::print("{} mark ", static_cast<void*>(object));
+  Value{object}.print_value();
+  std::println();
+#endif
+
+  object->is_marked = true;
+  m_gray_stacks.push_back(object);
+}
+
+void VM::trace_references() {
+  while (!m_gray_stacks.empty()) {
+    Obj* object{m_gray_stacks.back()};
+    blacken_object(object);
+    m_gray_stacks.pop_back();
+  }
+}
+
+void VM::blacken_object(Obj* object) {
+#ifdef DEBUG_LOG_GC
+  std::print("{} blacken ", static_cast<void*>(object));
+  Value{object}.print_value();
+  std::println();
+#endif
+
+  switch (object->type) {
+    case OBJ_CLOSURE: {
+      ObjClosure* closure{static_cast<ObjClosure*>(object)};
+      mark_object(closure->function);
+      for (ObjUpvalue* upvalue : closure->upvalues) {
+        mark_object(upvalue);
+      }
+      break;
+    }
+    case OBJ_FUNCTION: {
+      ObjFunction* function{static_cast<ObjFunction*>(object)};
+      mark_object(function->name);
+      mark_array(function->chunk.m_constants);
+      break;
+    }
+
+    case OBJ_UPVALUE:
+      mark_value(static_cast<ObjUpvalue*>(object)->closed);
+      break;
+
+    case OBJ_STRING:
+    case OBJ_NATIVE:
+      break;
+  }
+}
+
+void VM::remove_white_strings() {
+  std::erase_if(m_strings,
+                [](const auto& entry) { return !entry.second->is_marked; });
+}
+
+void VM::free_object(Obj* object) {
+#ifdef DEBUG_LOG_GC
+  std::println("{} free type {}", static_cast<void*>(object),
+               static_cast<int>(object->type));
+#endif
+  m_bytes_allocated -= object->size;
+  delete object;
+}
+
+void VM::sweep() {
+  std::size_t kept{};
+
+  for (Obj* obj : m_objects) {
+    if (obj->is_marked) {
+      obj->is_marked = false;
+      m_objects[kept++] = obj;
+    } else {
+      free_object(obj);
+    }
+  }
+
+  m_objects.resize(kept);
 }
 
 void VM::runtime_error(const std::string_view format, ...) {
@@ -575,3 +699,9 @@ void VM::runtime_error(const std::string_view format, ...) {
 }
 
 void VM::reset_stack() { m_sp = m_stack.data(); }
+
+VM::~VM() {
+  for (Obj* obj : m_objects) {
+    free_object(obj);
+  }
+}
