@@ -233,6 +233,12 @@ InterpretResult VM::run() {
         push(m_sp[-1]);
         break;
 
+      case OP_CLASS: {
+        auto name{read_string()};
+        push(Value{new_class(*this, name)});
+        break;
+      }
+
       // binary
       case OP_EQUAL: {
         auto v1{pop()};
@@ -627,6 +633,11 @@ void VM::blacken_object(Obj* object) {
 #endif
 
   switch (object->type) {
+    case OBJ_CLASS: {
+      ObjClass* klass{static_cast<ObjClass*>(object)};
+      mark_object(klass->name);
+      break;
+    }
     case OBJ_CLOSURE: {
       ObjClosure* closure{static_cast<ObjClosure*>(object)};
       mark_object(closure->function);

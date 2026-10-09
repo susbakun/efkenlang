@@ -61,6 +61,14 @@ ObjUpvalue* new_upvalue(VM& vm, Value& slot) {
   return object;
 }
 
+ObjClass* new_class(VM& vm, ObjString* name) {
+  ObjClass* object{vm.allocate_object<ObjClass>(OBJ_CLASS)};
+  object->type = OBJ_CLASS;
+  object->name = name;
+
+  return object;
+}
+
 ObjString* as_string(const Value& value) {
   return static_cast<ObjString*>(value.as_obj());
 }
@@ -78,6 +86,10 @@ ObjNative* as_native(const Value& value) {
 
 ObjClosure* as_closure(const Value& value) {
   return static_cast<ObjClosure*>(value.as_obj());
+}
+
+ObjClass* as_class(const Value& value) {
+  return static_cast<ObjClass*>(value.as_obj());
 }
 
 bool is_obj_type(const Value& value, const ObjType type) {
@@ -103,10 +115,11 @@ std::string object_to_string(const Value& value) {
     case OBJ_UPVALUE:
       return std::format("upvalue");
 
-    case OBJ_NATIVE: {
+    case OBJ_NATIVE:
       return std::format("<native fn>");
-      break;
-    }
+
+    case OBJ_CLASS:
+      return std::format("{}", as_class(value)->name->str);
   }
 }
 
@@ -134,6 +147,10 @@ void print_object(const Value& value) {
 
     case OBJ_NATIVE:
       std::print("<native fn>");
+      break;
+
+    case OBJ_CLASS:
+      std::print("{}", as_class(value)->name->str);
       break;
   }
 }

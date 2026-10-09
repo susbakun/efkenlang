@@ -132,6 +132,7 @@ class Compiler {
   Chunk& compiling_chunk();
 
   void declaration();
+  void class_declaration();
   void fun_declration();
   void function(FunctionType type);
   void var_declration(bool is_const);

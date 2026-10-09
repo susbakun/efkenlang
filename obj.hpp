@@ -7,7 +7,14 @@
 
 class VM;
 
-enum ObjType { OBJ_STRING, OBJ_FUNCTION, OBJ_CLOSURE, OBJ_UPVALUE, OBJ_NATIVE };
+enum ObjType {
+  OBJ_STRING,
+  OBJ_FUNCTION,
+  OBJ_CLOSURE,
+  OBJ_UPVALUE,
+  OBJ_NATIVE,
+  OBJ_CLASS
+};
 
 struct Obj {
   ObjType type;
@@ -46,6 +53,10 @@ struct ObjNative : public Obj {
   int arity;
 };
 
+struct ObjClass : public Obj {
+  ObjString* name;
+};
+
 ObjType obj_type(const Value& value);
 
 ObjString* allocate_string(VM& vm, std::string str);
@@ -53,12 +64,14 @@ ObjFunction* new_function(VM& vm);
 ObjClosure* new_closure(VM& vm, ObjFunction* function);
 ObjNative* new_native(VM& vm, NativeFn function, int arity);
 ObjUpvalue* new_upvalue(VM& vm, Value& slot);
+ObjClass* new_class(VM& vm, ObjString* name);
 
 ObjString* as_string(const Value& value);
 std::string& as_cpp_str(const Value& value);
 ObjFunction* as_function(const Value& value);
 ObjNative* as_native(const Value& value);
 ObjClosure* as_closure(const Value& value);
+ObjClass* as_class(const Value& value);
 
 bool is_obj_type(const Value& value, const ObjType type);
 

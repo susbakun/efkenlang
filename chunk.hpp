@@ -36,6 +36,8 @@ enum OpCode : std::uint8_t {
   OP_CLOSE_UPVALUE,
   OP_DUP,
 
+  OP_CLASS,
+
   // binary
   OP_EQUAL,
   OP_GREATER,

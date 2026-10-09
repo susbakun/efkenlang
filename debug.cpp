@@ -97,6 +97,9 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
     case OP_CLOSE_UPVALUE:
       return simple_instruction("OP_CLOSE_UPVALUE", offset);
 
+    case OP_CLASS:
+      return constant_instruction("OP_CLASS", chunk, offset);
+
       // binary
     case OP_EQUAL:
       return simple_instruction("OP_EQUAL", offset);

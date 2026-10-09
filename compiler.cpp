@@ -63,7 +63,9 @@ bool Compiler::check(TokenType type) { return m_parser.current.type == type; }
 Chunk& Compiler::compiling_chunk() { return m_function->chunk; }
 
 void Compiler::declaration() {
-  if (match(TOKEN_FUN)) {
+  if (match(TOKEN_CLASS)) {
+    class_declaration();
+  } else if (match(TOKEN_FUN)) {
     fun_declration();
   } else if (match(TOKEN_VAR)) {
     var_declration(false);
@@ -74,6 +76,19 @@ void Compiler::declaration() {
   }
 
   if (m_parser.panic_mode) syncronize();
+}
+
+void Compiler::class_declaration() {
+  consume(TOKEN_IDENTIFIER, "Expect class name.");
+  std::uint8_t name_constant{
+      std::get<0>(identifier_constant(m_parser.previous, true))};
+  declare_variable(true);
+
+  emit_bytes(OP_CLASS, name_constant);
+  define_variable(name_constant);
+
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
 }
 
 void Compiler::fun_declration() {
