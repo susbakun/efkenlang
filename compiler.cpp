@@ -497,6 +497,11 @@ void Compiler::discard_locals(int depth) {
       emit_byte(OP_POP);
     }
 
+    Token name{m_locals[m_local_count - 1].name};
+    std::string name_str{name.start, static_cast<std::size_t>(name.length)};
+
+    m_local_slots.erase(name_str);
+
     m_local_count--;
   }
 }

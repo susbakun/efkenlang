@@ -1,10 +1,7 @@
-class Person{}
+var a = "global";
+{
+    var a = "local";
+    print a;
+}
 
-
-const p1 = Person();
-
-p1.age = 2;
-
-p1.age = 3;
-
-print p1.age;
+print a;

@@ -520,9 +520,7 @@ bool VM::call_native(ObjNative* native, int arg_count) {
   m_sp -= (arg_count + 1);
 
   // for void functions
-  if (!result->is_nil()) {
-    push(*result);
-  }
+  push(*result);
 
   return true;
 }
