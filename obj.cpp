@@ -69,6 +69,13 @@ ObjClass* new_class(VM& vm, ObjString* name) {
   return object;
 }
 
+ObjInstance* new_instance(VM& vm, ObjClass* klass) {
+  ObjInstance* object{vm.allocate_object<ObjInstance>(OBJ_INSTANCE)};
+  object->klass = klass;
+
+  return object;
+}
+
 ObjString* as_string(const Value& value) {
   return static_cast<ObjString*>(value.as_obj());
 }
@@ -90,6 +97,10 @@ ObjClosure* as_closure(const Value& value) {
 
 ObjClass* as_class(const Value& value) {
   return static_cast<ObjClass*>(value.as_obj());
+}
+
+ObjInstance* as_instance(const Value& value) {
+  return static_cast<ObjInstance*>(value.as_obj());
 }
 
 bool is_obj_type(const Value& value, const ObjType type) {
@@ -120,6 +131,9 @@ std::string object_to_string(const Value& value) {
 
     case OBJ_CLASS:
       return std::format("{}", as_class(value)->name->str);
+
+    case OBJ_INSTANCE:
+      return std::format("{} instance", as_instance(value)->klass->name->str);
   }
 }
 
@@ -151,6 +165,10 @@ void print_object(const Value& value) {
 
     case OBJ_CLASS:
       std::print("{}", as_class(value)->name->str);
+      break;
+
+    case OBJ_INSTANCE:
+      std::print("{} instance", as_instance(value)->klass->name->str);
       break;
   }
 }

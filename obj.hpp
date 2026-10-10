@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <unordered_map>
 
 #include "chunk.hpp"
 #include "value.hpp"
@@ -13,6 +14,7 @@ enum ObjType {
   OBJ_CLOSURE,
   OBJ_UPVALUE,
   OBJ_NATIVE,
+  OBJ_INSTANCE,
   OBJ_CLASS
 };
 
@@ -57,6 +59,11 @@ struct ObjClass : public Obj {
   ObjString* name;
 };
 
+struct ObjInstance : public Obj {
+  ObjClass* klass;
+  std::unordered_map<ObjString*, Value> fields{};
+};
+
 ObjType obj_type(const Value& value);
 
 ObjString* allocate_string(VM& vm, std::string str);
@@ -65,6 +72,7 @@ ObjClosure* new_closure(VM& vm, ObjFunction* function);
 ObjNative* new_native(VM& vm, NativeFn function, int arity);
 ObjUpvalue* new_upvalue(VM& vm, Value& slot);
 ObjClass* new_class(VM& vm, ObjString* name);
+ObjInstance* new_instance(VM& vm, ObjClass* klass);
 
 ObjString* as_string(const Value& value);
 std::string& as_cpp_str(const Value& value);
@@ -72,6 +80,7 @@ ObjFunction* as_function(const Value& value);
 ObjNative* as_native(const Value& value);
 ObjClosure* as_closure(const Value& value);
 ObjClass* as_class(const Value& value);
+ObjInstance* as_instance(const Value& value);
 
 bool is_obj_type(const Value& value, const ObjType type);
 

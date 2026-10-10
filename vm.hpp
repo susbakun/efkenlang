@@ -86,6 +86,7 @@ class VM {
   void collect_garbadge();
   void mark_roots();
   void mark_array(const ValueArray& array);
+  void mark_table(std::unordered_map<ObjString*, Value>& table);
   void mark_value(const Value& value);
   void mark_object(Obj* object);
   void trace_references();

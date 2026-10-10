@@ -1,14 +1,2 @@
-// 3. Allocate temporary closures.
-var i = 0;
-while (i < 1000) {
-  fun makeTemp() {
-    var value = "temporary" + " object";
-    fun getValue() {
-      return value;
-    }
-    return getValue;
-  }
-
-  var temp = makeTemp();
-  i = i + 1;
-}
+class Brioche {}
+print Brioche();

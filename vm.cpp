@@ -378,6 +378,11 @@ Value VM::peek(int distance) { return m_sp[-1 - distance]; }
 bool VM::call_value(const Value& callee, int arg_count) {
   if (callee.is_obj()) {
     switch (obj_type(callee)) {
+      case OBJ_CLASS: {
+        ObjClass* klass{as_class(callee)};
+        m_sp[-arg_count - 1] = Value{new_instance(*this, klass)};
+        return true;
+      }
       case OBJ_CLOSURE:
         return call(as_closure(callee), arg_count);
       case OBJ_NATIVE: {
@@ -584,10 +589,7 @@ void VM::mark_roots() {
     mark_object(m_frames[i].closure);
   for (ObjUpvalue* up : m_open_upvalues) mark_object(up);
 
-  for (auto& [name, value] : m_globals) {
-    mark_object(name);
-    mark_value(value);
-  }
+  mark_table(m_globals);
 
   for (Compiler* c{m_current_compiler}; c != nullptr; c = c->enclosing()) {
     mark_object(c->get_function());
@@ -596,6 +598,13 @@ void VM::mark_roots() {
 
 void VM::mark_array(const ValueArray& array) {
   for (auto& value : array.m_values) {
+    mark_value(value);
+  }
+}
+
+void VM::mark_table(std::unordered_map<ObjString*, Value>& table) {
+  for (auto& [name, value] : table) {
+    mark_object(name);
     mark_value(value);
   }
 }
@@ -633,6 +642,13 @@ void VM::blacken_object(Obj* object) {
 #endif
 
   switch (object->type) {
+    case OBJ_INSTANCE: {
+      ObjInstance* instance{static_cast<ObjInstance*>(object)};
+      mark_object(instance->klass);
+      mark_table(instance->fields);
+      break;
+    }
+
     case OBJ_CLASS: {
       ObjClass* klass{static_cast<ObjClass*>(object)};
       mark_object(klass->name);
