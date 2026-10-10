@@ -1,2 +1,8 @@
-class Brioche {}
-print Brioche();
+class Student {}
+
+var s = Student();
+s.age = 2;
+print s.age;
+
+remove_attribute(s, "age");
+print s.age;

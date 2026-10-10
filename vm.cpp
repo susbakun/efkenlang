@@ -194,7 +194,7 @@ InterpretResult VM::run() {
           push(value);
           break;
         }
-        runtime_error("Undefined property '{}'.", name->str);
+        runtime_error(std::format("Undefined property '{}'.", name->str));
         return INTERPRET_RUNTIME_ERROR;
       }
       case OP_SET_PROPERTY: {
@@ -511,7 +511,7 @@ std::optional<Value> VM::clock_native(int arg_count, Value* args) {
 }
 
 std::optional<Value> VM::sqrt_native(int arg_count, Value* args) {
-  if (arg_count != 1 || !args[0].is_number()) {
+  if (!args[0].is_number()) {
     runtime_error("sqrt() expects one number.");
     return {};
   }
@@ -526,7 +526,7 @@ std::optional<Value> VM::sqrt_native(int arg_count, Value* args) {
 }
 
 std::optional<Value> VM::abs_native(int arg_count, Value* args) {
-  if (arg_count != 1 || !args[0].is_number()) {
+  if (!args[0].is_number()) {
     runtime_error("abs() expects one number.");
     return {};
   }
@@ -541,7 +541,7 @@ std::optional<Value> VM::type_native(int arg_count, Value* args) {
 }
 
 std::optional<Value> VM::sleep_native(int arg_count, Value* args) {
-  if (arg_count != 1 || !args[0].is_number()) {
+  if (!args[0].is_number()) {
     runtime_error("sleep() expects one number.");
     return {};
   }
@@ -558,7 +558,7 @@ std::optional<Value> VM::sleep_native(int arg_count, Value* args) {
 }
 
 std::optional<Value> VM::exit_native(int arg_count, Value* args) {
-  if (arg_count != 1 || !args[0].is_number()) {
+  if (!args[0].is_number()) {
     runtime_error("exit() expects one number.");
     return {};
   }
@@ -570,6 +570,31 @@ std::optional<Value> VM::exit_native(int arg_count, Value* args) {
   }
 
   std::exit(num);
+}
+
+std::optional<Value> VM::remove_attribute_native(int arg_count, Value* args) {
+  if (!is_obj_type(args[0], OBJ_INSTANCE)) {
+    runtime_error(
+        "The first argument to remove_attribute() should be an instance of a "
+        "class.");
+    return {};
+  }
+
+  if (!is_obj_type(args[1], OBJ_STRING)) {
+    runtime_error(
+        "The second argument to remove_attribute() should be a string.");
+    return {};
+  }
+
+  ObjInstance* instance{as_instance(args[0])};
+  ObjString* name{as_string(args[1])};
+
+  if (instance->fields.contains(name)) {
+    instance->fields.erase(name);
+    return Value{};
+  }
+  runtime_error(std::format("Undefined property '{}'.", name->str));
+  return {};
 }
 
 void VM::define_native(const std::string& name, NativeFn function, int arity) {

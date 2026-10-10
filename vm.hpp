@@ -35,6 +35,8 @@ class VM {
     define_native(std::string("type"), &VM::type_native, 1);
     define_native(std::string("sleep"), &VM::sleep_native, 1);
     define_native(std::string("exit"), &VM::exit_native, 1);
+    define_native(std::string("remove_attribute"), &VM::remove_attribute_native,
+                  2);
   }
 
   InterpretResult interpret(const std::string_view source);
@@ -70,6 +72,7 @@ class VM {
   std::optional<Value> type_native(int arg_count, Value* args);
   std::optional<Value> sleep_native(int arg_count, Value* args);
   std::optional<Value> exit_native(int arg_count, Value* args);
+  std::optional<Value> remove_attribute_native(int arg_count, Value* args);
   void define_native(const std::string& name, NativeFn function, int arity);
 
   std::uint8_t read_byte();
