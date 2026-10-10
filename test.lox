@@ -1,8 +1,10 @@
 class Student {}
 
 var s = Student();
+s.name = "Amir";
 s.age = 2;
-print s.age;
 
 remove_attribute(s, "age");
-print s.age;
+
+print has_attribute(s, "name");
+print has_attribute(s, "age");

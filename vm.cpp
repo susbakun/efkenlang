@@ -597,6 +597,25 @@ std::optional<Value> VM::remove_attribute_native(int arg_count, Value* args) {
   return {};
 }
 
+std::optional<Value> VM::has_attribute_native(int arg_count, Value* args) {
+  if (!is_obj_type(args[0], OBJ_INSTANCE)) {
+    runtime_error(
+        "The first argument to has_attribute() should be an instance of a "
+        "class.");
+    return {};
+  }
+
+  if (!is_obj_type(args[1], OBJ_STRING)) {
+    runtime_error("The second argument to has_attribute() should be a string.");
+    return {};
+  }
+
+  ObjInstance* instance{as_instance(args[0])};
+  ObjString* name{as_string(args[1])};
+
+  return Value{instance->fields.contains(name)};
+}
+
 void VM::define_native(const std::string& name, NativeFn function, int arity) {
   auto name_obj{allocate_string(*this, name)};
   push(Value{name_obj});
