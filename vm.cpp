@@ -179,6 +179,40 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_GET_PROPERTY: {
+        if (!is_obj_type(peek(0), OBJ_INSTANCE)) {
+          runtime_error("Only instances can have properties.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        ObjInstance* instance{as_instance(peek(0))};
+        ObjString* name{read_string()};
+
+        if (instance->fields.contains(name)) {
+          Value value{instance->fields.at(name)};
+          pop();
+          push(value);
+          break;
+        }
+        runtime_error("Undefined property '{}'.", name->str);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      case OP_SET_PROPERTY: {
+        if (!is_obj_type(peek(1), OBJ_INSTANCE)) {
+          runtime_error("Only instances can have properties.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        ObjInstance* instance{as_instance(peek(1))};
+        ObjString* name{read_string()};
+        Value value{pop()};
+        instance->fields[name] = value;
+        pop();
+        push(value);
+
+        break;
+      }
+
       case OP_JUMP_IF_FALSE: {
         std::uint16_t offset{read_short()};
         if (!peek(0).as_boolean()) m_frame->ip += offset;

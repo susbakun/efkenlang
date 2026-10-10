@@ -187,6 +187,7 @@ class Compiler {
   void _or(bool can_assign);
   void continue_stmt(bool can_assign);
   void break_stmt(bool can_assign);
+  void dot(bool can_assign);
   void call(bool can_assign);
   void literal(bool can_assign);
 
@@ -217,7 +218,7 @@ class Compiler {
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_LEFT_BRACE
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_RIGHT_BRACE
       {nullptr, &Compiler::binary, PREC_COMMA},           // TOKEN_COMMA
-      {nullptr, nullptr, PREC_NONE},                      // TOKEN_DOT
+      {nullptr, &Compiler::dot, PREC_CALL},               // TOKEN_DOT
       {&Compiler::unary, &Compiler::binary, PREC_TERM},   // TOKEN_MINUS
       {nullptr, &Compiler::binary, PREC_TERM},            // TOKEN_PLUS
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_SEMICOLON

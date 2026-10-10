@@ -809,6 +809,18 @@ void Compiler::break_stmt(bool can_assign) {
   loop.break_jumps.push_back(emit_jump(OP_JUMP));
 }
 
+void Compiler::dot(bool can_assign) {
+  consume(TOKEN_IDENTIFIER, "Expect a name after '.'");
+  std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous))};
+
+  if (can_assign && match(TOKEN_EQUAL)) {
+    expression();
+    emit_bytes(OP_SET_PROPERTY, name);
+  } else {
+    emit_bytes(OP_GET_PROPERTY, name);
+  }
+}
+
 void Compiler::call(bool can_assign) {
   std::uint8_t arg_count{argument_list()};
   emit_bytes(OP_CALL, arg_count);

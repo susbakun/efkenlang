@@ -64,6 +64,10 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return byte_instruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
       return byte_instruction("OP_SET_LOCAL", chunk, offset);
+    case OP_GET_PROPERTY:
+      return constant_instruction("OP_GET_PROPERTY", chunk, offset);
+    case OP_SET_PROPERTY:
+      return constant_instruction("OP_SET_PROPERTY", chunk, offset);
 
     case OP_JUMP:
       return jump_instruction("OP_JUMP", 1, chunk, offset);

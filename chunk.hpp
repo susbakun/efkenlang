@@ -26,6 +26,8 @@ enum OpCode : std::uint8_t {
   OP_SET_UPVALUE,
   OP_GET_LOCAL,
   OP_SET_LOCAL,
+  OP_GET_PROPERTY,
+  OP_SET_PROPERTY,
 
   OP_JUMP_IF_FALSE,
   OP_JUMP,
