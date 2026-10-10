@@ -139,6 +139,10 @@ void Compiler::var_declration(bool is_const) {
 
   if (match(TOKEN_EQUAL)) {
     expression();
+
+    // set for const object to prohibit the user from
+    // adding fields to it.
+    if (is_const) emit_byte(OP_SEAL);
   } else {
     if (is_const) {
       error("Const variables must be initilized.");
@@ -147,7 +151,7 @@ void Compiler::var_declration(bool is_const) {
   }
   consume(TOKEN_SEMICOLON, "Expect ';' after varialbe declration.");
 
-  define_variable(global);
+  define_variable(global, is_const);
 }
 
 std::uint8_t Compiler::parse_variable(const std::string_view error_message,
@@ -253,14 +257,14 @@ VarInfo Compiler::add_upvalue(std::uint8_t index, bool is_local,
   return std::make_tuple(upvalue_count, is_const);
 }
 
-void Compiler::define_variable(std::uint8_t global) {
+void Compiler::define_variable(std::uint8_t global, bool is_const) {
   // no need to emit_bytes for local variables
   if (m_scope_depth > 0) {
     mark_as_initilized();
     return;
   }
 
-  emit_bytes(OP_DEFINE_GLOBAL, global);
+  emit_bytes(is_const ? OP_DEFINE_CONST_GLOBAL : OP_DEFINE_GLOBAL, global);
 }
 
 void Compiler::statement() {
@@ -852,6 +856,7 @@ void Compiler::parse_precedence(Precedence precedence) {
   }
 
   bool can_assign{precedence <= PREC_ASSIGNMENT};
+
   // fucking weird syntax because ParseFn
   // needs to know which object to operate on
   (this->*prefix_rule)(can_assign);

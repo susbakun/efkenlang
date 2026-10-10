@@ -62,6 +62,7 @@ struct ObjClass : public Obj {
 struct ObjInstance : public Obj {
   ObjClass* klass;
   std::unordered_map<ObjString*, Value> fields{};
+  bool sealed{false};
 };
 
 ObjType obj_type(const Value& value);

@@ -146,7 +146,7 @@ class Compiler {
 
   void add_local(Token& name, bool is_const);
   VarInfo add_upvalue(std::uint8_t index, bool is_local, bool is_const);
-  void define_variable(std::uint8_t global);
+  void define_variable(std::uint8_t global, bool is_const = false);
   void statement();
   void print_statement();
   void if_statement();

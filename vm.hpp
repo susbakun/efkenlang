@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "common.hpp"
 #include "obj.hpp"
@@ -111,6 +112,7 @@ class VM {
   Value* m_sp{m_stack.data()};
   std::unordered_map<std::string, ObjString*> m_strings{};
   std::unordered_map<ObjString*, Value> m_globals{};
+  std::unordered_set<ObjString*> m_const_globals{};
   std::vector<Obj*> m_objects{};
   std::vector<Obj*> m_gray_stacks{};
   std::size_t m_bytes_allocated{};

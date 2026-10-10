@@ -135,6 +135,14 @@ InterpretResult VM::run() {
         pop();
         break;
       }
+      case OP_DEFINE_CONST_GLOBAL: {
+        ObjString* name{read_string()};
+        m_const_globals.insert(name);
+        m_globals[name] = peek(0);
+        pop();
+        break;
+      }
+
       case OP_GET_GLOBAL: {
         ObjString* name{read_string()};
         auto value{m_globals.find(name)};
@@ -148,6 +156,13 @@ InterpretResult VM::run() {
       }
       case OP_SET_GLOBAL: {
         ObjString* name{read_string()};
+
+        if (m_const_globals.contains(name)) {
+          runtime_error(
+              std::format("Can't assign to const variables: {}", name->str));
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
         if (!m_globals.contains(name)) {
           runtime_error("Undefined variable " + name->str + " .");
           return INTERPRET_RUNTIME_ERROR;
@@ -205,11 +220,26 @@ InterpretResult VM::run() {
 
         ObjInstance* instance{as_instance(peek(1))};
         ObjString* name{read_string()};
+
+        if (instance->sealed && !instance->fields.contains(name)) {
+          runtime_error(
+              std::format("Can't add fields to const objects: {}", name->str));
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
         Value value{pop()};
         instance->fields[name] = value;
         pop();
         push(value);
 
+        break;
+      }
+
+      case OP_SEAL: {
+        if (is_obj_type(peek(0), OBJ_INSTANCE)) {
+          ObjInstance* instance{as_instance(peek(0))};
+          instance->sealed = true;
+        }
         break;
       }
 

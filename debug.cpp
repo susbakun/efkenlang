@@ -52,6 +52,8 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return constant_instruction("OP_POPN", chunk, offset);
     case OP_DEFINE_GLOBAL:
       return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
+    case OP_DEFINE_CONST_GLOBAL:
+      return constant_instruction("OP_DEFINE_CONST_GLOBAL", chunk, offset);
     case OP_GET_GLOBAL:
       return constant_instruction("OP_GET_GLOBAL", chunk, offset);
     case OP_SET_GLOBAL:
@@ -68,6 +70,8 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return constant_instruction("OP_GET_PROPERTY", chunk, offset);
     case OP_SET_PROPERTY:
       return constant_instruction("OP_SET_PROPERTY", chunk, offset);
+    case OP_SEAL:
+      return simple_instruction("OP_SEAL", offset);
 
     case OP_JUMP:
       return jump_instruction("OP_JUMP", 1, chunk, offset);

@@ -1,10 +1,10 @@
-class Student {}
+class Person{}
 
-var s = Student();
-s.name = "Amir";
-s.age = 2;
 
-remove_attribute(s, "age");
+const p1 = Person();
 
-print has_attribute(s, "name");
-print has_attribute(s, "age");
+p1.age = 2;
+
+p1.age = 3;
+
+print p1.age;

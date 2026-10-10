@@ -20,6 +20,7 @@ enum OpCode : std::uint8_t {
   OP_POP,
   OP_POPN,
   OP_DEFINE_GLOBAL,
+  OP_DEFINE_CONST_GLOBAL,
   OP_GET_GLOBAL,
   OP_SET_GLOBAL,
   OP_GET_UPVALUE,
@@ -28,6 +29,7 @@ enum OpCode : std::uint8_t {
   OP_SET_LOCAL,
   OP_GET_PROPERTY,
   OP_SET_PROPERTY,
+  OP_SEAL,
 
   OP_JUMP_IF_FALSE,
   OP_JUMP,
