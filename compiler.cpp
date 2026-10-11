@@ -80,15 +80,35 @@ void Compiler::declaration() {
 
 void Compiler::class_declaration() {
   consume(TOKEN_IDENTIFIER, "Expect class name.");
+  Token class_name{m_parser.previous};
   std::uint8_t name_constant{
-      std::get<0>(identifier_constant(m_parser.previous, true))};
+      std::get<0>(identifier_constant(class_name, true))};
   declare_variable(true);
 
   emit_bytes(OP_CLASS, name_constant);
   define_variable(name_constant);
 
+  named_variable(class_name, false);
+
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+
+  // methods
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    method();
+  }
+
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+  emit_byte(OP_POP);
+}
+
+void Compiler::method() {
+  consume(TOKEN_IDENTIFIER, "Expect a name for methods.");
+  std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous))};
+
+  FunctionType type{TYPE_FUNCTION};
+  function(type);
+
+  emit_bytes(OP_METHOD, name);
 }
 
 void Compiler::fun_declration() {

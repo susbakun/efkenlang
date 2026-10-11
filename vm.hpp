@@ -65,6 +65,7 @@ class VM {
   void close_upvalues(const Value* last);
   bool call(ObjClosure* closure, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
+  void define_method(ObjString* name);
 
   // native functions
   std::optional<Value> input_native(int arg_count, Value* args);
@@ -89,6 +90,7 @@ class VM {
 
   bool is_stack_full() const;
 
+  // gc stuff
   void collect_garbadge();
   void mark_roots();
   void mark_array(const ValueArray& array);

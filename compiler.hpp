@@ -133,6 +133,7 @@ class Compiler {
 
   void declaration();
   void class_declaration();
+  void method();
   void fun_declration();
   void function(FunctionType type);
   void var_declration(bool is_const);

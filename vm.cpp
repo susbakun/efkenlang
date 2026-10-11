@@ -303,6 +303,10 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_METHOD:
+        define_method(read_string());
+        break;
+
       // binary
       case OP_EQUAL: {
         auto v1{pop()};
@@ -523,6 +527,13 @@ bool VM::call_native(ObjNative* native, int arg_count) {
   push(*result);
 
   return true;
+}
+
+void VM::define_method(ObjString* name) {
+  Value method{peek(0)};
+  ObjClass* klass{as_class(peek(1))};
+  klass->methods.insert({name, method});
+  pop();
 }
 
 std::optional<Value> VM::input_native(int arg_count, Value* args) {
@@ -758,6 +769,7 @@ void VM::blacken_object(Obj* object) {
     case OBJ_CLASS: {
       ObjClass* klass{static_cast<ObjClass*>(object)};
       mark_object(klass->name);
+      mark_table(klass->methods);
       break;
     }
     case OBJ_CLOSURE: {

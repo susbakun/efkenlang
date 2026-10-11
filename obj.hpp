@@ -57,6 +57,7 @@ struct ObjNative : public Obj {
 
 struct ObjClass : public Obj {
   ObjString* name;
+  std::unordered_map<ObjString*, Value> methods{};
 };
 
 struct ObjInstance : public Obj {
