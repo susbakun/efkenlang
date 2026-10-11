@@ -459,8 +459,8 @@ bool VM::call_value(const Value& callee, int arg_count) {
         ObjClass* klass{as_class(callee)};
         m_sp[-arg_count - 1] = Value{new_instance(*this, klass)};
 
-        if (klass->methods.contains(m_init_string)) {
-          return call(as_closure(klass->methods[m_init_string]), arg_count);
+        if (klass->initilizer != nullptr) {
+          return call(klass->initilizer, arg_count);
         } else if (arg_count != 0) {
           runtime_error(std::format("Expect 0 arguments got: {}", arg_count));
           return false;
@@ -549,7 +549,13 @@ bool VM::call_native(ObjNative* native, int arg_count) {
 void VM::define_method(ObjString* name) {
   Value method{peek(0)};
   ObjClass* klass{as_class(peek(1))};
-  klass->methods.insert({name, method});
+
+  if (name->str == "init") {
+    klass->initilizer = as_closure(method);
+  } else {
+    klass->methods.insert({name, method});
+  }
+
   pop();
 }
 
@@ -758,8 +764,6 @@ void VM::mark_roots() {
   for (Compiler* c{m_current_compiler}; c != nullptr; c = c->enclosing()) {
     mark_object(c->get_function());
   }
-
-  mark_object(m_init_string);
 }
 
 void VM::mark_array(const ValueArray& array) {
@@ -819,6 +823,7 @@ void VM::blacken_object(Obj* object) {
       ObjClass* klass{static_cast<ObjClass*>(object)};
       mark_object(klass->name);
       mark_table(klass->methods);
+      mark_object(klass->initilizer);
       break;
     }
     case OBJ_CLOSURE: {
