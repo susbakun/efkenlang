@@ -586,6 +586,13 @@ bool VM::invoke(ObjString* name, int arg_count) {
 
   ObjInstance* instance{as_instance(receiver)};
 
+  if (instance->fields.contains(name)) {
+    Value method{instance->fields.at(name)};
+
+    m_sp[-arg_count - 1] = method;
+    return call_value(method, arg_count);
+  }
+
   return invoke_from_class(instance->klass, name, arg_count);
 }
 
