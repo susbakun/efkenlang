@@ -210,9 +210,6 @@ InterpretResult VM::run() {
           break;
         }
 
-        if (!bind_method(instance->klass, name)) {
-          return INTERPRET_RUNTIME_ERROR;
-        }
         break;
       }
       case OP_SET_PROPERTY: {
@@ -458,11 +455,6 @@ Value VM::peek(int distance) { return m_sp[-1 - distance]; }
 bool VM::call_value(const Value& callee, int arg_count) {
   if (callee.is_obj()) {
     switch (obj_type(callee)) {
-      case OBJ_BOUND_METHOD: {
-        ObjBoundMethod* bound_method{as_bound_method(callee)};
-        m_sp[-arg_count - 1] = bound_method->receiver;
-        return call(bound_method->method, arg_count);
-      }
       case OBJ_CLASS: {
         ObjClass* klass{as_class(callee)};
         m_sp[-arg_count - 1] = Value{new_instance(*this, klass)};
@@ -559,22 +551,6 @@ void VM::define_method(ObjString* name) {
   ObjClass* klass{as_class(peek(1))};
   klass->methods.insert({name, method});
   pop();
-}
-
-bool VM::bind_method(ObjClass* klass, ObjString* name) {
-  if (!klass->methods.contains(name)) {
-    runtime_error(std::format("Undefined property: {}", name->str));
-    return false;
-  }
-
-  ObjClosure* method{as_closure(klass->methods.at(name))};
-  Value receiver{peek(0)};
-
-  ObjBoundMethod* bound_method{new_bound_method(*this, receiver, method)};
-  pop();
-
-  push(Value{bound_method});
-  return true;
 }
 
 bool VM::invoke(ObjString* name, int arg_count) {
@@ -832,12 +808,6 @@ void VM::blacken_object(Obj* object) {
 #endif
 
   switch (object->type) {
-    case OBJ_BOUND_METHOD: {
-      ObjBoundMethod* bound_method{static_cast<ObjBoundMethod*>(object)};
-      mark_value(bound_method->receiver);
-      mark_object(bound_method->method);
-      break;
-    }
     case OBJ_INSTANCE: {
       ObjInstance* instance{static_cast<ObjInstance*>(object)};
       mark_object(instance->klass);
