@@ -11,9 +11,9 @@ add_executable(lox_tests
   test_class.cc
   test_const.cc
   test_gc.cc
-  )
+)
 
-target_include_directories(lox_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 target_link_libraries(lox_tests PRIVATE lox_core GTest::gtest_main)
 include(GoogleTest)
 gtest_discover_tests(lox_tests)
