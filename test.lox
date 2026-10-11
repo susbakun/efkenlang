@@ -1,12 +1,8 @@
-class CoffeeMaker {
-  init(coffee) {
-    this.coffee = coffee;
-  }
-
-  brew() {
-    print "Enjoy your cup of " + this.coffee;
-  }
+class P {
+      init(n) { this.n = n; }
+      get() { return this.n; }
 }
 
-var maker = CoffeeMaker("coffee and chicory");
-maker.brew();
+var g = P("kept").get;
+for (var i = 0; i < 50000; i = i + 1) { var s = "junk" + i; }
+print g();
