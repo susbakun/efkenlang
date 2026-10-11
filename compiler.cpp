@@ -103,7 +103,7 @@ void Compiler::class_declaration() {
 
 void Compiler::method() {
   consume(TOKEN_IDENTIFIER, "Expect a name for methods.");
-  std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous))};
+  std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous, false))};
 
   FunctionType type{TYPE_FUNCTION};
   function(type);

@@ -1,7 +1,8 @@
-var a = "global";
-{
-    var a = "local";
-    print a;
+class Scone {
+  topping(first, second) {
+    print "scone with " + first + " and " + second;
+  }
 }
 
-print a;
+var scone = Scone();
+scone.topping("berries", "cream");

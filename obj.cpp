@@ -76,6 +76,14 @@ ObjInstance* new_instance(VM& vm, ObjClass* klass) {
   return object;
 }
 
+ObjBoundMethod* new_bound_method(VM& vm, Value& receiver, ObjClosure* method) {
+  ObjBoundMethod* object{vm.allocate_object<ObjBoundMethod>(OBJ_BOUND_METHOD)};
+  object->receiver = receiver;
+  object->method = method;
+
+  return object;
+}
+
 ObjString* as_string(const Value& value) {
   return static_cast<ObjString*>(value.as_obj());
 }
@@ -101,6 +109,10 @@ ObjClass* as_class(const Value& value) {
 
 ObjInstance* as_instance(const Value& value) {
   return static_cast<ObjInstance*>(value.as_obj());
+}
+
+ObjBoundMethod* as_bound_method(const Value& value) {
+  return static_cast<ObjBoundMethod*>(value.as_obj());
 }
 
 bool is_obj_type(const Value& value, const ObjType type) {
@@ -134,6 +146,12 @@ std::string object_to_string(const Value& value) {
 
     case OBJ_INSTANCE:
       return std::format("{} instance", as_instance(value)->klass->name->str);
+
+    case OBJ_BOUND_METHOD: {
+      auto function{as_bound_method(value)->method->function};
+      return std::format(
+          "{}", function->name != nullptr ? function->name->str : "<script>");
+    }
   }
 }
 
@@ -170,5 +188,12 @@ void print_object(const Value& value) {
     case OBJ_INSTANCE:
       std::print("{} instance", as_instance(value)->klass->name->str);
       break;
+
+    case OBJ_BOUND_METHOD: {
+      auto function{as_bound_method(value)->method->function};
+      std::print("{}",
+                 function->name != nullptr ? function->name->str : "<script>");
+      break;
+    }
   }
 }

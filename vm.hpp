@@ -66,6 +66,7 @@ class VM {
   bool call(ObjClosure* closure, int arg_count);
   bool call_native(ObjNative* native, int arg_count);
   void define_method(ObjString* name);
+  bool bind_method(ObjClass* klass, ObjString* name);
 
   // native functions
   std::optional<Value> input_native(int arg_count, Value* args);
