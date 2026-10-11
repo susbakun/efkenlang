@@ -69,6 +69,8 @@ class VM {
   bool call_native(ObjNative* native, int arg_count);
   void define_method(ObjString* name);
   bool bind_method(ObjClass* klass, ObjString* name);
+  bool invoke(ObjString* name, int arg_count);
+  bool invoke_from_class(ObjClass* klass, ObjString* name, int arg_count);
 
   // native functions
   std::optional<Value> input_native(int arg_count, Value* args);

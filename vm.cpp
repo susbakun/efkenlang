@@ -272,6 +272,15 @@ InterpretResult VM::run() {
 
         break;
       }
+      case OP_INVOKE: {
+        ObjString* method{read_string()};
+        int arg_count{read_byte()};
+        if (!invoke(method, arg_count)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        m_frame = &m_frames[m_frame_count - 1];
+        break;
+      }
 
       case OP_CLOSURE: {
         ObjFunction* function{as_function(read_constant())};
@@ -566,6 +575,29 @@ bool VM::bind_method(ObjClass* klass, ObjString* name) {
 
   push(Value{bound_method});
   return true;
+}
+
+bool VM::invoke(ObjString* name, int arg_count) {
+  Value receiver{peek(arg_count)};
+  if (!is_obj_type(receiver, OBJ_INSTANCE)) {
+    runtime_error("Only instances have methods.");
+    return false;
+  }
+
+  ObjInstance* instance{as_instance(receiver)};
+
+  return invoke_from_class(instance->klass, name, arg_count);
+}
+
+bool VM::invoke_from_class(ObjClass* klass, ObjString* name, int arg_count) {
+  if (!klass->methods.contains(name)) {
+    runtime_error(std::format("Undefined property '{}'", name->str));
+    return false;
+  }
+
+  Value& method{klass->methods.at(name)};
+
+  return call(as_closure(method), arg_count);
 }
 
 std::optional<Value> VM::input_native(int arg_count, Value* args) {

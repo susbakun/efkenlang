@@ -81,6 +81,8 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return jump_instruction("OP_LOOP", -1, chunk, offset);
     case OP_CALL:
       return byte_instruction("OP_CALL", chunk, offset);
+    case OP_INVOKE:
+      return invoke_instruction("OP_INVOKE", chunk, offset);
     case OP_CLOSURE: {
       offset++;
       std::uint8_t constant{chunk.get_code(offset++)};
@@ -181,6 +183,16 @@ std::size_t jump_instruction(const std::string_view name, int sign,
   jump |= chunk.get_code_ref(offset + 2);
 
   std::println("{:16} {:4} -> {}", name, offset, offset + 3 + sign * jump);
+  return offset + 3;
+}
+
+std::size_t invoke_instruction(const std::string_view name, Chunk& chunk,
+                               std::size_t offset) {
+  std::uint8_t constant{chunk.get_code(offset + 1)};
+  std::uint8_t arg_count{chunk.get_code(offset + 2)};
+  std::print("{:16} ({} args) {:4} '", name, arg_count, constant);
+  chunk.get_constant_ref(constant).print_value();
+  std::println();
   return offset + 3;
 }
 
