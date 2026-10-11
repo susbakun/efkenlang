@@ -39,6 +39,8 @@ class VM {
     define_native(std::string("remove_attribute"), &VM::remove_attribute_native,
                   2);
     define_native(std::string("has_attribute"), &VM::has_attribute_native, 2);
+
+    m_init_string = allocate_string(*this, "init");
   }
 
   InterpretResult interpret(const std::string_view source);
@@ -121,6 +123,7 @@ class VM {
   std::size_t m_bytes_allocated{};
   std::size_t m_next_gc{1024 * 1024};
   Compiler* m_current_compiler{nullptr};
+  ObjString* m_init_string{nullptr};
 };
 
 template <typename T>

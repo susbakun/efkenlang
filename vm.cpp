@@ -451,11 +451,20 @@ bool VM::call_value(const Value& callee, int arg_count) {
     switch (obj_type(callee)) {
       case OBJ_BOUND_METHOD: {
         ObjBoundMethod* bound_method{as_bound_method(callee)};
+        m_sp[-arg_count - 1] = bound_method->receiver;
         return call(bound_method->method, arg_count);
       }
       case OBJ_CLASS: {
         ObjClass* klass{as_class(callee)};
         m_sp[-arg_count - 1] = Value{new_instance(*this, klass)};
+
+        if (klass->methods.contains(m_init_string)) {
+          return call(as_closure(klass->methods[m_init_string]), arg_count);
+        } else if (arg_count != 0) {
+          runtime_error(std::format("Expect 0 arguments got: {}", arg_count));
+          return false;
+        }
+
         return true;
       }
       case OBJ_CLOSURE:
@@ -734,6 +743,8 @@ void VM::mark_roots() {
   for (Compiler* c{m_current_compiler}; c != nullptr; c = c->enclosing()) {
     mark_object(c->get_function());
   }
+
+  mark_object(m_init_string);
 }
 
 void VM::mark_array(const ValueArray& array) {

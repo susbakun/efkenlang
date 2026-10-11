@@ -73,7 +73,11 @@ struct Loop {
   std::vector<int> break_jumps{};
 };
 
-enum FunctionType { TYPE_FUNCTION, TYPE_SCRIPT };
+struct CurrentClass {
+  CurrentClass* enclosing;
+};
+
+enum FunctionType { TYPE_FUNCTION, TYPE_SCRIPT, TYPE_METHOD, TYPE_INITILIZER };
 
 class Compiler {
  public:
@@ -97,16 +101,13 @@ class Compiler {
         m_enclosing{&enclosing},
         m_type{type},
         m_scanner{enclosing.m_scanner},
-        m_parser{enclosing.m_parser} {
+        m_parser{enclosing.m_parser},
+        m_current_class{enclosing.m_current_class} {
     auto& local{m_locals[m_local_count++]};
     local.depth = 0;
     local.is_const = false;
     local.name.start = "";
     local.name.length = 0;
-
-    std::string fname_str{""};
-
-    m_local_slots.insert({fname_str, 0});
 
     if (type != TYPE_SCRIPT) {
       std::string name{
@@ -117,6 +118,16 @@ class Compiler {
 
       m_function->name = allocate_string(enclosing.m_vm, name);
     }
+
+    if (type != TYPE_FUNCTION) {
+      local.name.start = "this";
+      local.name.length = 4;
+    }
+
+    std::string fname_str{local.name.start,
+                          static_cast<std::size_t>(local.name.length)};
+
+    m_local_slots.insert({fname_str, 0});
   }
 
   ObjFunction* compile();
@@ -190,6 +201,7 @@ class Compiler {
   void break_stmt(bool can_assign);
   void dot(bool can_assign);
   void call(bool can_assign);
+  void _this(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
@@ -212,6 +224,7 @@ class Compiler {
   std::array<Upvalue, UINT8_COUNT> m_upvalues{};
   // kept for continue statements
   std::vector<Loop> m_target_loops{};
+  CurrentClass* m_current_class{nullptr};
 
   std::array<ParseRule, 47> m_rules{{
       {&Compiler::grouping, &Compiler::call, PREC_CALL},  // TOKEN_LEFT_PAREN
@@ -252,7 +265,7 @@ class Compiler {
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_PRINT
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_RETURN
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_SUPER
-      {nullptr, nullptr, PREC_NONE},                      // TOKEN_THIS
+      {&Compiler::_this, nullptr, PREC_NONE},             // TOKEN_THIS
       {&Compiler::literal, nullptr, PREC_NONE},           // TOKEN_TRUE
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_VAR
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_CONST

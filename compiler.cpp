@@ -88,6 +88,10 @@ void Compiler::class_declaration() {
   emit_bytes(OP_CLASS, name_constant);
   define_variable(name_constant);
 
+  CurrentClass cc{};
+  cc.enclosing = m_current_class;
+  m_current_class = &cc;
+
   named_variable(class_name, false);
 
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -99,13 +103,21 @@ void Compiler::class_declaration() {
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emit_byte(OP_POP);
+
+  m_current_class = m_current_class->enclosing;
 }
 
 void Compiler::method() {
   consume(TOKEN_IDENTIFIER, "Expect a name for methods.");
   std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous, false))};
 
-  FunctionType type{TYPE_FUNCTION};
+  FunctionType type{TYPE_METHOD};
+
+  if (m_parser.previous.length == 4 &&
+      std::memcmp(m_parser.previous.start, "init", 4) == 0) {
+    type = TYPE_INITILIZER;
+  }
+
   function(type);
 
   emit_bytes(OP_METHOD, name);
@@ -343,6 +355,10 @@ void Compiler::return_statement() {
   if (match(TOKEN_SEMICOLON)) {
     emit_return();
   } else {
+    if (m_type == TYPE_INITILIZER) {
+      error("Can't return from an initlizer.");
+    }
+
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after 'return'.");
     emit_byte(OP_RETURN);
@@ -721,7 +737,11 @@ void Compiler::emit_loop(int loop_start) {
 }
 
 void Compiler::emit_return() {
-  emit_byte(OP_NIL);
+  if (m_type == TYPE_INITILIZER) {
+    emit_bytes(OP_GET_LOCAL, 0);
+  } else {
+    emit_byte(OP_NIL);
+  }
   emit_byte(OP_RETURN);
 }
 
@@ -853,6 +873,15 @@ void Compiler::dot(bool can_assign) {
 void Compiler::call(bool can_assign) {
   std::uint8_t arg_count{argument_list()};
   emit_bytes(OP_CALL, arg_count);
+}
+
+void Compiler::_this(bool can_assign) {
+  if (m_current_class == nullptr) {
+    error("Can't use 'this' outside of a class.");
+    return;
+  }
+
+  variable(false);
 }
 
 void Compiler::literal(bool can_assign) {
