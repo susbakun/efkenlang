@@ -1,16 +1,6 @@
-class Doughnut {
-  init(a) {
-      this.a = a;
-  }
+var x = 2;
 
-}
-
-class Cruller < Doughnut {
-  init(b) {
-      super.init(1);
-      this.b = b;
-  }
-}
-
-var c = Cruller(2);
-print c.a;
+do {
+      print x;
+      x = x - 1;
+} while(x > 0);

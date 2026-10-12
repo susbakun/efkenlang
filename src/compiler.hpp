@@ -166,6 +166,7 @@ class Compiler {
   void if_statement();
   void return_statement();
   void switch_statement();
+  void do_while_statement();
   void while_statement();
   void for_statement();
   void begin_scope();
@@ -229,7 +230,7 @@ class Compiler {
   std::vector<Loop> m_target_loops{};
   CurrentClass* m_current_class{nullptr};
 
-  std::array<ParseRule, 47> m_rules{{
+  std::array<ParseRule, 48> m_rules{{
       {&Compiler::grouping, &Compiler::call, PREC_CALL},  // TOKEN_LEFT_PAREN
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_RIGHT_PAREN
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_LEFT_BRACE
@@ -272,6 +273,7 @@ class Compiler {
       {&Compiler::literal, nullptr, PREC_NONE},           // TOKEN_TRUE
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_VAR
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_CONST
+      {nullptr, nullptr, PREC_NONE},                      // TOKEN_DO
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_WHILE
       {&Compiler::continue_stmt, nullptr, PREC_NONE},     // TOKEN_CONTINUE
       {&Compiler::break_stmt, nullptr, PREC_NONE},        // TOKEN_BREAK

@@ -334,6 +334,8 @@ void Compiler::statement() {
     if_statement();
   } else if (match(TOKEN_RETURN)) {
     return_statement();
+  } else if (match(TOKEN_DO)) {
+    do_while_statement();
   } else if (match(TOKEN_WHILE)) {
     while_statement();
   } else if (match(TOKEN_FOR)) {
@@ -457,6 +459,38 @@ void Compiler::switch_statement() {
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after 'switch'");
   end_scope();
+}
+
+void Compiler::do_while_statement() {
+  int loop_start{static_cast<int>(compiling_chunk().code_size())};
+
+  m_target_loops.push_back({loop_start, m_scope_depth, {}});
+
+  statement();
+
+  // while part
+  consume(TOKEN_WHILE, "Expect while at the end of do-while statement.");
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
+  consume(TOKEN_SEMICOLON, "Expected ';' after the do-while statment.");
+
+  int exit_jump{emit_jump(OP_JUMP_IF_FALSE)};
+
+  emit_byte(OP_POP);
+  emit_loop(loop_start);
+
+  patch_jump(exit_jump);
+
+  auto& loop{m_target_loops.back()};
+
+  for (auto& bj : loop.break_jumps) {
+    patch_jump(bj);
+  }
+
+  emit_byte(OP_POP);
+
+  m_target_loops.pop_back();
 }
 
 void Compiler::while_statement() {

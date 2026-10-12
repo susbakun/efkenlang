@@ -49,6 +49,7 @@ enum TokenType {
   TOKEN_TRUE,
   TOKEN_VAR,
   TOKEN_CONST,
+  TOKEN_DO,
   TOKEN_WHILE,
   TOKEN_CONTINUE,
   TOKEN_BREAK,
@@ -59,13 +60,13 @@ enum TokenType {
 
 struct Token {
   TokenType type;
-  const char *start;
+  const char* start;
   int length;
   int line;
 };
 
 class Scanner {
-public:
+ public:
   Scanner(const std::string_view source)
       : m_start{source.data()}, m_current{source.data()}, m_line{1} {}
 
@@ -82,12 +83,12 @@ public:
   void skip_whitespace();
   Token identifier();
   TokenType identifier_type();
-  TokenType check_type(int start, int length, const char *rest, TokenType type);
+  TokenType check_type(int start, int length, const char* rest, TokenType type);
   Token number();
   Token string();
 
-private:
-  const char *m_start;
-  const char *m_current;
+ private:
+  const char* m_start;
+  const char* m_current;
   int m_line;
 };

@@ -166,7 +166,15 @@ TokenType Scanner::identifier_type() {
       }
       break;
     case 'd':
-      return check_type(1, 6, "efault", TOKEN_DEFAULT_CASE);
+      if (m_current - m_start > 1) {
+        switch (m_start[1]) {
+          case 'o':
+            return check_type(2, 0, "", TOKEN_DO);
+          case 'e':
+            return check_type(2, 5, "fault", TOKEN_DEFAULT_CASE);
+        }
+      }
+      break;
     case 'e':
       return check_type(1, 3, "lse", TOKEN_ELSE);
     case 'i':
