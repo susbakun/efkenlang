@@ -315,10 +315,22 @@ InterpretResult VM::run() {
         push(Value{new_class(*this, name)});
         break;
       }
-
       case OP_METHOD:
         define_method(read_string());
         break;
+      case OP_INHERIT: {
+        Value superclass{peek(1)};
+        if (!is_obj_type(superclass, OBJ_CLASS)) {
+          runtime_error("Superclass must be a class");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        ObjClass* subclass{as_class(peek(0))};
+        subclass->methods.insert(subclass->methods.begin(),
+                                 as_class(superclass)->methods.end());
+        pop();  // subclass
+        break;
+      }
 
       // binary
       case OP_EQUAL: {

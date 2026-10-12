@@ -16,7 +16,7 @@
 #include "scanner.hpp"
 #include "value.hpp"
 
-ObjFunction *Compiler::compile() {
+ObjFunction* Compiler::compile() {
   advance();
   while (!match(TOKEN_EOF)) {
     declaration();
@@ -26,17 +26,16 @@ ObjFunction *Compiler::compile() {
   return m_parser.had_error ? nullptr : function;
 }
 
-Compiler *Compiler::enclosing() const { return m_enclosing; }
+Compiler* Compiler::enclosing() const { return m_enclosing; }
 
-ObjFunction *Compiler::get_function() const { return m_function; }
+ObjFunction* Compiler::get_function() const { return m_function; }
 
 void Compiler::advance() {
   m_parser.previous = m_parser.current;
 
   while (true) {
     m_parser.current = m_scanner.scan_token();
-    if (m_parser.current.type != TOKEN_ERROR)
-      break;
+    if (m_parser.current.type != TOKEN_ERROR) break;
 
     error_at_current(m_parser.current.start);
   }
@@ -52,8 +51,7 @@ void Compiler::consume(const TokenType type, const std::string_view message) {
 }
 
 bool Compiler::match(TokenType type) {
-  if (!check(type))
-    return false;
+  if (!check(type)) return false;
 
   advance();
   return true;
@@ -61,7 +59,7 @@ bool Compiler::match(TokenType type) {
 
 bool Compiler::check(TokenType type) { return m_parser.current.type == type; }
 
-Chunk &Compiler::compiling_chunk() { return m_function->chunk; }
+Chunk& Compiler::compiling_chunk() { return m_function->chunk; }
 
 void Compiler::declaration() {
   if (match(TOKEN_CLASS)) {
@@ -76,8 +74,7 @@ void Compiler::declaration() {
     statement();
   }
 
-  if (m_parser.panic_mode)
-    syncronize();
+  if (m_parser.panic_mode) syncronize();
 }
 
 void Compiler::class_declaration() {
@@ -94,6 +91,24 @@ void Compiler::class_declaration() {
   cc.enclosing = m_current_class;
   m_current_class = &cc;
 
+  if (match(TOKEN_LESS)) {
+    consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+    variable(false);
+
+    if (identifiers_equal(class_name, m_parser.previous)) {
+      error("A class can't inherit from itself.");
+    }
+
+    begin_scope();
+    Token st{synthetic_token("super")};
+    add_local(st, true);
+    define_variable(0, true);
+
+    named_variable(class_name, false);
+    emit_byte(OP_INHERIT);
+    m_current_class->has_super_class = true;
+  }
+
   named_variable(class_name, false);
 
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -105,6 +120,10 @@ void Compiler::class_declaration() {
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emit_byte(OP_POP);
+
+  if (m_current_class->has_super_class) {
+    end_scope();
+  }
 
   m_current_class = m_current_class->enclosing;
 }
@@ -157,7 +176,7 @@ void Compiler::function(FunctionType type) {
 
   compiler.block();
 
-  ObjFunction *function{compiler.end_compiler()};
+  ObjFunction* function{compiler.end_compiler()};
   auto ind{compiling_chunk().add_constant(Value{function})};
 
   emit_bytes(OP_CLOSURE, ind);
@@ -176,8 +195,7 @@ void Compiler::var_declration(bool is_const) {
 
     // set for const object to prohibit the user from
     // adding fields to it.
-    if (is_const)
-      emit_byte(OP_SEAL);
+    if (is_const) emit_byte(OP_SEAL);
   } else {
     if (is_const) {
       error("Const variables must be initilized.");
@@ -198,22 +216,19 @@ std::uint8_t Compiler::parse_variable(const std::string_view error_message,
   // don't need to store the variable's name
   // in the constant table of the chunk
   // so we just return a dummy index
-  if (m_scope_depth > 0)
-    return 0;
+  if (m_scope_depth > 0) return 0;
 
   // just return the index
   return std::get<0>(identifier_constant(m_parser.previous, is_const));
 }
 
 void Compiler::declare_variable(bool is_const) {
-  if (m_scope_depth == 0)
-    return;
+  if (m_scope_depth == 0) return;
 
   auto name{m_parser.previous};
 
   for (int i{m_local_count - 1}; i >= 0; i--) {
-    if (m_locals[i].depth != -1 && m_locals[i].depth < m_scope_depth)
-      break;
+    if (m_locals[i].depth != -1 && m_locals[i].depth < m_scope_depth) break;
 
     if (identifiers_equal(name, m_locals[i].name)) {
       error("Already declared variable with the name " +
@@ -225,15 +240,14 @@ void Compiler::declare_variable(bool is_const) {
 }
 
 void Compiler::mark_as_initilized() {
-  if (m_scope_depth == 0)
-    return;
+  if (m_scope_depth == 0) return;
 
   m_locals[m_local_count - 1].depth = m_scope_depth;
 }
 
-std::tuple<std::uint8_t, bool>
-Compiler::identifier_constant(Token &name, bool is_const = false) {
-  ObjString *obj_name{
+std::tuple<std::uint8_t, bool> Compiler::identifier_constant(
+    Token& name, bool is_const = false) {
+  ObjString* obj_name{
       allocate_string(m_vm, std::string(name.start, name.length))};
 
   // we check if we already encountered the
@@ -248,14 +262,20 @@ Compiler::identifier_constant(Token &name, bool is_const = false) {
   return std::make_tuple(ind, is_const);
 }
 
-bool Compiler::identifiers_equal(Token &name1, Token &name2) {
-  if (name1.length != name2.length)
-    return false;
+bool Compiler::identifiers_equal(Token& name1, Token& name2) {
+  if (name1.length != name2.length) return false;
 
   return std::memcmp(name1.start, name2.start, name1.length) == 0;
 }
 
-void Compiler::add_local(Token &name, bool is_const) {
+Token Compiler::synthetic_token(const std::string_view text) {
+  Token token{};
+  token.start = text.data();
+  token.length = text.length();
+  return token;
+}
+
+void Compiler::add_local(Token& name, bool is_const) {
   if (m_local_count == UINT8_COUNT) {
     error("Too many local variables in function.");
     return;
@@ -276,7 +296,7 @@ void Compiler::add_local(Token &name, bool is_const) {
 VarInfo Compiler::add_upvalue(std::uint8_t index, bool is_local,
                               bool is_const) {
   for (std::size_t i{}; i < m_function->upvalue_count; i++) {
-    Upvalue &upvalue{m_upvalues[i]};
+    Upvalue& upvalue{m_upvalues[i]};
     if (upvalue.index == index && upvalue.is_local == is_local) {
       return std::make_tuple(i, is_const);
     }
@@ -433,7 +453,7 @@ void Compiler::switch_statement() {
     patch_jump(end_jump);
   }
 
-  emit_byte(OP_POP); // original switch value
+  emit_byte(OP_POP);  // original switch value
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after 'switch'");
   end_scope();
@@ -455,9 +475,9 @@ void Compiler::while_statement() {
 
   patch_jump(exit_jump);
 
-  auto &loop{m_target_loops.back()};
+  auto& loop{m_target_loops.back()};
 
-  for (auto &bj : loop.break_jumps) {
+  for (auto& bj : loop.break_jumps) {
     patch_jump(bj);
   }
 
@@ -562,28 +582,27 @@ void Compiler::syncronize() {
   m_parser.panic_mode = false;
 
   while (m_parser.current.type != TOKEN_EOF) {
-    if (m_parser.previous.type == TOKEN_SEMICOLON)
-      return;
+    if (m_parser.previous.type == TOKEN_SEMICOLON) return;
 
     switch (m_parser.current.type) {
-    case TOKEN_CLASS:
-    case TOKEN_FOR:
-    case TOKEN_IF:
-    case TOKEN_FUN:
-    case TOKEN_WHILE:
-    case TOKEN_VAR:
-    case TOKEN_PRINT:
-    case TOKEN_RETURN:
-      return;
-    default:
-      // do nothing
+      case TOKEN_CLASS:
+      case TOKEN_FOR:
+      case TOKEN_IF:
+      case TOKEN_FUN:
+      case TOKEN_WHILE:
+      case TOKEN_VAR:
+      case TOKEN_PRINT:
+      case TOKEN_RETURN:
+        return;
+      default:
+        // do nothing
     }
   }
 
   advance();
 }
 
-ParseRule &Compiler::get_rule(const TokenType type) { return m_rules[type]; }
+ParseRule& Compiler::get_rule(const TokenType type) { return m_rules[type]; }
 
 void Compiler::number(bool can_assign) {
   double value{std::stod(m_parser.previous.start)};
@@ -594,7 +613,7 @@ void Compiler::string(bool can_assign) {
   auto str{
       std::string(m_parser.previous.start + 1, m_parser.previous.length - 2)};
 
-  auto *string{allocate_string(m_vm, std::move(str))};
+  auto* string{allocate_string(m_vm, std::move(str))};
 
   emit_constant(Value{string});
 }
@@ -603,7 +622,7 @@ void Compiler::variable(bool can_assign) {
   named_variable(m_parser.previous, can_assign);
 }
 
-void Compiler::named_variable(Token &name, bool can_assign) {
+void Compiler::named_variable(Token& name, bool can_assign) {
   std::uint8_t get_op, set_op;
   auto arg{resolve_local(name)};
 
@@ -631,12 +650,11 @@ void Compiler::named_variable(Token &name, bool can_assign) {
   }
 }
 
-VarInfo Compiler::resolve_local(Token &name) {
+VarInfo Compiler::resolve_local(Token& name) {
   auto name_str{std::string(name.start, name.length)};
   auto it{m_local_slots.find(name_str)};
 
-  if (it == m_local_slots.end())
-    return std::make_tuple(-1, false);
+  if (it == m_local_slots.end()) return std::make_tuple(-1, false);
 
   auto index{it->second};
   if (m_locals[index].depth == -1) {
@@ -646,9 +664,8 @@ VarInfo Compiler::resolve_local(Token &name) {
   return std::make_tuple(index, m_locals[index].is_const);
 }
 
-VarInfo Compiler::resolve_up_value(Token &name) {
-  if (m_enclosing == nullptr)
-    return std::make_tuple(-1, false);
+VarInfo Compiler::resolve_up_value(Token& name) {
+  if (m_enclosing == nullptr) return std::make_tuple(-1, false);
 
   auto local{m_enclosing->resolve_local(name)};
   if (std::get<0>(local) != -1) {
@@ -700,9 +717,9 @@ void Compiler::emit_bytes(std::uint8_t byte1, std::uint8_t byte2) {
   emit_byte(byte2);
 }
 
-ObjFunction *Compiler::end_compiler() {
+ObjFunction* Compiler::end_compiler() {
   emit_return();
-  ObjFunction *function{m_function};
+  ObjFunction* function{m_function};
 
 #ifdef DEBUG_PRINT_CODE
   if (!m_parser.had_error) {
@@ -725,7 +742,7 @@ int Compiler::emit_jump(std::uint8_t instruction) {
 }
 
 void Compiler::patch_jump(int offset) {
-  auto &cc{compiling_chunk()};
+  auto& cc{compiling_chunk()};
   // -2 to adjust for the bytecode for the jump offset itself.
   int jump{static_cast<int>(cc.code_size()) - offset - 2};
 
@@ -741,8 +758,7 @@ void Compiler::emit_loop(int loop_start) {
   emit_byte(OP_LOOP);
 
   int offset{static_cast<int>(compiling_chunk().code_size()) - loop_start + 2};
-  if (offset > UINT16_MAX)
-    error("Loop body too large");
+  if (offset > UINT16_MAX) error("Loop body too large");
 
   emit_byte((offset >> 8) & 0xff);
   emit_byte(offset & 0xff);
@@ -769,58 +785,58 @@ void Compiler::unary(bool can_assign) {
   parse_precedence(PREC_UNARY);
 
   switch (type) {
-  case TOKEN_BANG:
-    emit_byte(OP_NOT);
-    break;
-  case TOKEN_MINUS:
-    emit_byte(OP_NEGATE);
-    break;
-  default:
-    return;
+    case TOKEN_BANG:
+      emit_byte(OP_NOT);
+      break;
+    case TOKEN_MINUS:
+      emit_byte(OP_NEGATE);
+      break;
+    default:
+      return;
   }
 }
 
 void Compiler::binary(bool can_assign) {
   auto operator_type{m_parser.previous.type};
-  ParseRule &rule{get_rule(operator_type)};
+  ParseRule& rule{get_rule(operator_type)};
   parse_precedence(static_cast<Precedence>(rule.precedence + 1));
 
   switch (operator_type) {
-  case TOKEN_BANG_EQUAL:
-    emit_bytes(OP_EQUAL, OP_NOT);
-    break;
-  case TOKEN_EQUAL_EQUAL:
-    emit_byte(OP_EQUAL);
-    break;
-  case TOKEN_GREATER:
-    emit_byte(OP_GREATER);
-    break;
-  case TOKEN_GREATER_EQUAL:
-    emit_bytes(OP_LESS, OP_NOT);
-    break;
-  case TOKEN_LESS:
-    emit_byte(OP_LESS);
-    break;
-  case TOKEN_LESS_EQUAL:
-    emit_bytes(OP_GREATER, OP_NOT);
-    break;
-  case TOKEN_PLUS:
-    emit_byte(OP_ADD);
-    break;
-  case TOKEN_MINUS:
-    emit_byte(OP_SUBTRACT);
-    break;
-  case TOKEN_STAR:
-    emit_byte(OP_MULTIPLY);
-    break;
-  case TOKEN_SLASH:
-    emit_byte(OP_DIVIDE);
-    break;
+    case TOKEN_BANG_EQUAL:
+      emit_bytes(OP_EQUAL, OP_NOT);
+      break;
+    case TOKEN_EQUAL_EQUAL:
+      emit_byte(OP_EQUAL);
+      break;
+    case TOKEN_GREATER:
+      emit_byte(OP_GREATER);
+      break;
+    case TOKEN_GREATER_EQUAL:
+      emit_bytes(OP_LESS, OP_NOT);
+      break;
+    case TOKEN_LESS:
+      emit_byte(OP_LESS);
+      break;
+    case TOKEN_LESS_EQUAL:
+      emit_bytes(OP_GREATER, OP_NOT);
+      break;
+    case TOKEN_PLUS:
+      emit_byte(OP_ADD);
+      break;
+    case TOKEN_MINUS:
+      emit_byte(OP_SUBTRACT);
+      break;
+    case TOKEN_STAR:
+      emit_byte(OP_MULTIPLY);
+      break;
+    case TOKEN_SLASH:
+      emit_byte(OP_DIVIDE);
+      break;
 
-  case TOKEN_COMMA:
-    emit_byte(OP_COMMA);
-  default:
-    return;
+    case TOKEN_COMMA:
+      emit_byte(OP_COMMA);
+    default:
+      return;
   }
 }
 
@@ -862,7 +878,7 @@ void Compiler::break_stmt(bool can_assign) {
     return;
   }
 
-  auto &loop{m_target_loops.back()};
+  auto& loop{m_target_loops.back()};
 
   // remove the locals on loop
   discard_locals(loop.scope_depth);
@@ -902,17 +918,17 @@ void Compiler::_this(bool can_assign) {
 
 void Compiler::literal(bool can_assign) {
   switch (m_parser.previous.type) {
-  case TOKEN_FALSE:
-    emit_byte(OP_FALSE);
-    break;
-  case TOKEN_TRUE:
-    emit_byte(OP_TRUE);
-    break;
-  case TOKEN_NIL:
-    emit_byte(OP_NIL);
-    break;
-  default:
-    return;
+    case TOKEN_FALSE:
+      emit_byte(OP_FALSE);
+      break;
+    case TOKEN_TRUE:
+      emit_byte(OP_TRUE);
+      break;
+    case TOKEN_NIL:
+      emit_byte(OP_NIL);
+      break;
+    default:
+      return;
   }
 }
 
@@ -950,10 +966,9 @@ void Compiler::error(const std::string_view message) {
   error_at(m_parser.previous, message);
 }
 
-void Compiler::error_at(Token &token, const std::string_view message) {
+void Compiler::error_at(Token& token, const std::string_view message) {
   // Don't output any other errors while we already have one
-  if (m_parser.panic_mode)
-    return;
+  if (m_parser.panic_mode) return;
 
   m_parser.panic_mode = true;
 

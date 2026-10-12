@@ -75,6 +75,7 @@ struct Loop {
 
 struct CurrentClass {
   CurrentClass* enclosing;
+  bool has_super_class{};
 };
 
 enum FunctionType { TYPE_FUNCTION, TYPE_SCRIPT, TYPE_METHOD, TYPE_INITILIZER };
@@ -156,6 +157,7 @@ class Compiler {
                                                      bool is_const);
   bool identifiers_equal(Token& name1, Token& name2);
 
+  Token synthetic_token(const std::string_view text);
   void add_local(Token& name, bool is_const);
   VarInfo add_upvalue(std::uint8_t index, bool is_local, bool is_const);
   void define_variable(std::uint8_t global, bool is_const = false);
