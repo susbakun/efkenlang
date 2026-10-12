@@ -1,19 +1,16 @@
 class Doughnut {
-  cook() {
-    print "Dunk in the fryer.";
-    this.finish("sprinkles");
+  init(a) {
+      this.a = a;
   }
 
-  finish(ingredient) {
-    print "Finish with " + ingredient;
-  }
 }
 
 class Cruller < Doughnut {
-  finish(ingredient) {
-    // No sprinkles, always icing.
-    super.finish("icing");
+  init(b) {
+      super.init(1);
+      this.b = b;
   }
 }
 
-Cruller().finish("pasta");
+var c = Cruller(2);
+print c.a;

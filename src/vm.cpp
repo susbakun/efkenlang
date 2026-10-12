@@ -503,8 +503,8 @@ bool VM::call_value(const Value& callee, int arg_count) {
         ObjClass* klass{as_class(callee)};
         m_sp[-arg_count - 1] = Value{new_instance(*this, klass)};
 
-        if (klass->initilizer != nullptr) {
-          return call(klass->initilizer, arg_count);
+        if (klass->initializer != nullptr) {
+          return call(klass->initializer, arg_count);
         } else if (arg_count != 0) {
           runtime_error(std::format("Expect 0 arguments got: {}", arg_count));
           return false;
@@ -595,7 +595,7 @@ void VM::define_method(ObjString* name) {
   ObjClass* klass{as_class(peek(1))};
 
   if (name->str == "init") {
-    klass->initilizer = as_closure(method);
+    klass->initializer = as_closure(method);
   } else {
     klass->methods.insert({name, method});
   }
@@ -639,8 +639,8 @@ bool VM::invoke(ObjString* name, int arg_count) {
 }
 
 bool VM::invoke_from_class(ObjClass* klass, ObjString* name, int arg_count) {
-  if (name->str == "init" && klass->initilizer != nullptr) {
-    return call(klass->initilizer, arg_count);
+  if (name->str == "init" && klass->initializer != nullptr) {
+    return call(klass->initializer, arg_count);
   }
 
   if (!klass->methods.contains(name)) {
@@ -893,7 +893,7 @@ void VM::blacken_object(Obj* object) {
       ObjClass* klass{static_cast<ObjClass*>(object)};
       mark_object(klass->name);
       mark_table(klass->methods);
-      mark_object(klass->initilizer);
+      mark_object(klass->initializer);
       break;
     }
     case OBJ_CLOSURE: {
