@@ -246,7 +246,7 @@ void Compiler::mark_as_initilized() {
 }
 
 std::tuple<std::uint8_t, bool> Compiler::identifier_constant(
-    Token& name, bool is_const = false) {
+    const Token& name, bool is_const = false) {
   ObjString* obj_name{
       allocate_string(m_vm, std::string(name.start, name.length))};
 
@@ -622,7 +622,7 @@ void Compiler::variable(bool can_assign) {
   named_variable(m_parser.previous, can_assign);
 }
 
-void Compiler::named_variable(Token& name, bool can_assign) {
+void Compiler::named_variable(const Token& name, bool can_assign) {
   std::uint8_t get_op, set_op;
   auto arg{resolve_local(name)};
 
@@ -650,7 +650,7 @@ void Compiler::named_variable(Token& name, bool can_assign) {
   }
 }
 
-VarInfo Compiler::resolve_local(Token& name) {
+VarInfo Compiler::resolve_local(const Token& name) {
   auto name_str{std::string(name.start, name.length)};
   auto it{m_local_slots.find(name_str)};
 
@@ -664,7 +664,7 @@ VarInfo Compiler::resolve_local(Token& name) {
   return std::make_tuple(index, m_locals[index].is_const);
 }
 
-VarInfo Compiler::resolve_up_value(Token& name) {
+VarInfo Compiler::resolve_up_value(const Token& name) {
   if (m_enclosing == nullptr) return std::make_tuple(-1, false);
 
   auto local{m_enclosing->resolve_local(name)};
@@ -914,6 +914,21 @@ void Compiler::_this(bool can_assign) {
   }
 
   variable(false);
+}
+
+void Compiler::_super(bool can_assign) {
+  if (m_current_class == nullptr) {
+    error("Can't use 'super' outside of a class.");
+  } else if (!m_current_class->has_super_class) {
+    error("Can't use 'super' in a class without a superclass.");
+  }
+
+  consume(TOKEN_DOT, "Expect '.' after 'super'.");
+  consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+  std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous, true))};
+  named_variable(synthetic_token("this"), false);
+  named_variable(synthetic_token("super"), false);
+  emit_bytes(OP_GET_SUPER, name);
 }
 
 void Compiler::literal(bool can_assign) {

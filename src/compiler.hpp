@@ -153,7 +153,7 @@ class Compiler {
                               bool is_const);
   void declare_variable(bool is_const);
   void mark_as_initilized();
-  std::tuple<std::uint8_t, bool> identifier_constant(Token& name,
+  std::tuple<std::uint8_t, bool> identifier_constant(const Token& name,
                                                      bool is_const);
   bool identifiers_equal(Token& name1, Token& name2);
 
@@ -181,9 +181,9 @@ class Compiler {
   void number(bool can_assign);
   void string(bool can_assign);
   void variable(bool can_assign);
-  void named_variable(Token& name, bool can_assign);
-  VarInfo resolve_local(Token& name);
-  VarInfo resolve_up_value(Token& name);
+  void named_variable(const Token& name, bool can_assign);
+  VarInfo resolve_local(const Token& name);
+  VarInfo resolve_up_value(const Token& name);
   std::uint8_t argument_list();
   void emit_constant(Value value);
   void emit_byte(std::uint8_t byte);
@@ -204,6 +204,7 @@ class Compiler {
   void dot(bool can_assign);
   void call(bool can_assign);
   void _this(bool can_assign);
+  void _super(bool can_assign);
   void literal(bool can_assign);
 
   void parse_precedence(Precedence precedence);
@@ -266,7 +267,7 @@ class Compiler {
       {nullptr, &Compiler::_or, PREC_OR},                 // TOKEN_OR
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_PRINT
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_RETURN
-      {nullptr, nullptr, PREC_NONE},                      // TOKEN_SUPER
+      {&Compiler::_super, nullptr, PREC_NONE},            // TOKEN_SUPER
       {&Compiler::_this, nullptr, PREC_NONE},             // TOKEN_THIS
       {&Compiler::literal, nullptr, PREC_NONE},           // TOKEN_TRUE
       {nullptr, nullptr, PREC_NONE},                      // TOKEN_VAR

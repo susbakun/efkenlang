@@ -44,6 +44,7 @@ enum OpCode : std::uint8_t {
   OP_CLASS,
   OP_METHOD,
   OP_INHERIT,
+  OP_GET_SUPER,
 
   // binary
   OP_EQUAL,

@@ -331,6 +331,16 @@ InterpretResult VM::run() {
         pop();  // subclass
         break;
       }
+      case OP_GET_SUPER: {
+        ObjString* name{read_string()};
+        ObjClass* superclass{as_class(pop())};
+
+        if (!bind_method(superclass, name)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        break;
+      }
 
       // binary
       case OP_EQUAL: {
