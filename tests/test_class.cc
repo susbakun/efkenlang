@@ -309,3 +309,262 @@ TEST(MethodsGC, BoundMethodSurvivesCollection) {
   )",
              "kept\n");
 }
+
+TEST(Inheritance, SubclassInheritsMethods) {
+  EXPECT_LOX(R"(
+    class Animal { speak() { print "..."; } }
+    class Dog < Animal {}
+    Dog().speak();
+  )",
+             "...\n");
+}
+
+TEST(Inheritance, SubclassMethodOverridesWithoutTouchingTheSuperclass) {
+  EXPECT_LOX(R"(
+    class A { m() { return "A"; } }
+    class B < A { m() { return "B"; } }
+    print B().m();
+    print A().m();
+  )",
+             "B\nA\n");
+}
+
+TEST(Inheritance, MethodsAreInheritedThroughSeveralLevels) {
+  EXPECT_LOX(R"(
+    class A { a() { return "a"; } }
+    class B < A { b() { return "b"; } }
+    class C < B { c() { return "c"; } }
+    var c = C();
+    print c.a() + c.b() + c.c();
+  )",
+             "abc\n");
+}
+
+TEST(Inheritance, InheritedMethodsSeeTheSubclassFields) {
+  EXPECT_LOX(R"(
+    class A { describe() { return "I am " + this.name; } }
+    class B < A { init(name) { this.name = name; } }
+    print B("bee").describe();
+  )",
+             "I am bee\n");
+}
+
+TEST(Inheritance, InstancePrintsItsOwnClassName) {
+  EXPECT_LOX("class A {} class B < A {} print B();", "B instance\n");
+}
+
+TEST(Inheritance, SubclassInitializerOverridesTheSuperclassOne) {
+  EXPECT_LOX(R"(
+    class A { init() { this.who = "A"; } }
+    class B < A { init() { this.who = "B"; } }
+    print B().who;
+  )",
+             "B\n");
+}
+
+// ---- super ----------------------------------------------------------------
+
+TEST(Super, CallsTheSuperclassMethod) {
+  EXPECT_LOX(R"(
+    class A { greet() { print "A"; } }
+    class B < A { greet() { super.greet(); print "B"; } }
+    B().greet();
+  )",
+             "A\nB\n");
+}
+
+TEST(Super, UsesTheReceiverAsThis) {
+  EXPECT_LOX(R"(
+    class A { who() { return this.name; } }
+    class B < A {
+      init() { this.name = "b"; }
+      get() { return super.who(); }
+    }
+    print B().get();
+  )",
+             "b\n");
+}
+
+// `super` is resolved from the class where the method is *written*, not from
+// the class of the receiver.
+TEST(Super, IsBoundToTheEnclosingClassNotTheReceiversClass) {
+  EXPECT_LOX(R"(
+    class Base { hello() { print "Base hello"; } }
+    class Mid < Base {
+      hello() { print "Mid hello"; }
+      test() { super.hello(); }
+    }
+    class Leaf < Mid {}
+    Leaf().test();
+  )",
+             "Base hello\n");
+}
+
+TEST(Super, ChainsThroughEveryLevel) {
+  EXPECT_LOX(R"(
+    class A { name() { return "A"; } }
+    class B < A { name() { return super.name() + "B"; } }
+    class C < B { name() { return super.name() + "C"; } }
+    print C().name();
+  )",
+             "ABC\n");
+}
+
+TEST(Super, AccessWithoutCallingGivesABoundMethod) {
+  EXPECT_LOX(R"(
+    class A { hi() { return "hi from A"; } }
+    class B < A { grab() { return super.hi; } }
+    var f = B().grab();
+    print f();
+  )",
+             "hi from A\n");
+}
+
+TEST(Super, WorksInsideAClosure) {
+  EXPECT_LOX(R"(
+    class A { say() { print "A"; } }
+    class B < A {
+      run() {
+        fun inner() { super.say(); }
+        inner();
+      }
+    }
+    B().run();
+  )",
+             "A\n");
+}
+
+TEST(Super, InitChain) {
+  EXPECT_LOX(R"(
+    class A { init(a) { this.a = a; } }
+    class B < A {
+      init(a, b) {
+        super.init(a);
+        this.b = b;
+      }
+    }
+    var o = B(1, 2);
+    print o.a + o.b;
+    print o;
+  )",
+             "3\nB instance\n");
+}
+
+TEST(Super, LooksOnlyAtMethodsNotFields) {
+  EXPECT_LOX_RUNTIME_ERROR(R"(
+    class A {}
+    class B < A {
+      init() { this.x = 1; }
+      get() { return super.x; }
+    }
+    B().get();
+  )");
+}
+
+TEST(Super, MissingSuperMethodIsRuntimeError) {
+  EXPECT_LOX_RUNTIME_ERROR(R"(
+    class A {}
+    class B < A { m() { super.nope(); } }
+    B().m();
+  )");
+}
+
+TEST(Super, SuperInitWithWrongArityIsRuntimeError) {
+  EXPECT_LOX_RUNTIME_ERROR(R"(
+    class A { init(a) {} }
+    class B < A { init() { super.init(); } }
+    B();
+  )");
+}
+
+TEST(Super, LocalClassesCanInherit) {
+  EXPECT_LOX(R"(
+    fun make() {
+      class A { hi() { print "A hi"; } }
+      class B < A { hi() { super.hi(); print "B hi"; } }
+      return B();
+    }
+    make().hi();
+  )",
+             "A hi\nB hi\n");
+}
+
+// ---- errors ---------------------------------------------------------------
+
+TEST(InheritanceErrors, ClassCannotInheritFromItself) {
+  EXPECT_LOX_COMPILE_ERROR("class A < A {}");
+}
+
+TEST(InheritanceErrors, SuperclassMustBeAClass) {
+  EXPECT_LOX_RUNTIME_ERROR(R"(
+    var notAClass = "nope";
+    class B < notAClass {}
+  )");
+}
+
+TEST(InheritanceErrors, SuperclassCannotBeAnInstance) {
+  EXPECT_LOX_RUNTIME_ERROR("class A {} var a = A(); class B < a {}");
+}
+
+TEST(InheritanceErrors, UndefinedSuperclassIsRuntimeError) {
+  EXPECT_LOX_RUNTIME_ERROR("class B < Missing {}");
+}
+
+TEST(SuperErrors, OutsideAClassIsACompileError) {
+  EXPECT_LOX_COMPILE_ERROR("print super.x;");
+  EXPECT_LOX_COMPILE_ERROR("fun f() { super.x(); }");
+}
+
+TEST(SuperErrors, InAClassWithoutASuperclassIsACompileError) {
+  EXPECT_LOX_COMPILE_ERROR("class A { m() { super.m(); } }");
+}
+
+TEST(SuperErrors, MustBeFollowedByADot) {
+  EXPECT_LOX_COMPILE_ERROR("class A {} class B < A { m() { super; } }");
+}
+
+// ---- GC with inheritance --------------------------------------------------
+
+TEST(InheritanceGC, SuperCallsSurviveCollections) {
+  EXPECT_LOX(R"(
+    class A {
+      init() { this.n = 0; }
+      bump() { this.n = this.n + 1; }
+    }
+    class B < A { init() { super.init(); } bump() { super.bump(); super.bump(); } }
+    var b = B();
+    for (var i = 0; i < 50000; i = i + 1) {
+      b.bump();
+      var junk = "junk" + i;
+    }
+    print b.n;
+  )",
+             "1e+05\n");
+}
+
+// After make() returns, class A is reachable only through the closed `super`
+// upvalue and the copied-down methods.
+TEST(InheritanceGC, SuperclassReachableOnlyThroughUpvalueSurvives) {
+  EXPECT_LOX(R"(
+    fun make() {
+      class A { hi() { return "hi"; } }
+      class B < A { shout() { return super.hi() + "!"; } }
+      return B();
+    }
+    var b = make();
+    for (var i = 0; i < 50000; i = i + 1) { var s = "junk" + i; }
+    print b.shout();
+  )",
+             "hi!\n");
+}
+
+TEST(InheritanceGC, BoundSuperMethodSurvivesCollection) {
+  EXPECT_LOX(R"(
+    class A { get() { return "kept"; } }
+    class B < A { grab() { return super.get; } }
+    var g = B().grab();
+    for (var i = 0; i < 50000; i = i + 1) { var s = "junk" + i; }
+    print g();
+  )",
+             "kept\n");
+}

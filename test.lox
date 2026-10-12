@@ -1,6 +1,11 @@
-var x = 2;
-
-do {
-      print x;
-      x = x - 1;
-} while(x > 0);
+class A {
+      init() { this.n = 0; }
+      bump() { this.n = this.n + 1; }
+    }
+    class B < A { init() { super.init(); } bump() { super.bump(); super.bump(); } }
+    var b = B();
+    for (var i = 0; i < 50000; i = i + 1) {
+      b.bump();
+      var junk = "junk" + i;
+    }
+print b.n;

@@ -326,7 +326,7 @@ InterpretResult VM::run() {
         }
 
         ObjClass* subclass{as_class(peek(0))};
-        subclass->methods.insert(subclass->methods.begin(),
+        subclass->methods.insert(as_class(superclass)->methods.begin(),
                                  as_class(superclass)->methods.end());
         pop();  // subclass
         break;
@@ -597,7 +597,7 @@ void VM::define_method(ObjString* name) {
   if (name->str == "init") {
     klass->initializer = as_closure(method);
   } else {
-    klass->methods.insert({name, method});
+    klass->methods[name] = method;
   }
 
   pop();
