@@ -927,8 +927,16 @@ void Compiler::_super(bool can_assign) {
   consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
   std::uint8_t name{std::get<0>(identifier_constant(m_parser.previous, true))};
   named_variable(synthetic_token("this"), false);
-  named_variable(synthetic_token("super"), false);
-  emit_bytes(OP_GET_SUPER, name);
+
+  if (match(TOKEN_LEFT_PAREN)) {
+    int arg_count{argument_list()};
+    named_variable(synthetic_token("super"), false);
+    emit_bytes(OP_SUPER_INVOKE, name);
+    emit_byte(arg_count);
+  } else {
+    named_variable(synthetic_token("super"), false);
+    emit_bytes(OP_GET_SUPER, name);
+  }
 }
 
 void Compiler::literal(bool can_assign) {

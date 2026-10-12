@@ -115,6 +115,8 @@ int disassemble_instruction(Chunk& chunk, std::size_t offset) {
       return simple_instruction("OP_INHERIT", offset);
     case OP_GET_SUPER:
       return constant_instruction("OP_GET_SUPER", chunk, offset);
+    case OP_SUPER_INVOKE:
+      return invoke_instruction("OP_SUPER_INVOKE", chunk, offset);
 
       // binary
     case OP_EQUAL:

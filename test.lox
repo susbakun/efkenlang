@@ -1,8 +1,19 @@
-class P {
-      init(n) { this.n = n; }
-      get() { return this.n; }
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
+    this.finish("sprinkles");
+  }
+
+  finish(ingredient) {
+    print "Finish with " + ingredient;
+  }
 }
 
-var g = P("kept").get;
-for (var i = 0; i < 50000; i = i + 1) { var s = "junk" + i; }
-print g();
+class Cruller < Doughnut {
+  finish(ingredient) {
+    // No sprinkles, always icing.
+    super.finish("icing");
+  }
+}
+
+Cruller().finish("pasta");

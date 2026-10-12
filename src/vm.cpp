@@ -341,6 +341,18 @@ InterpretResult VM::run() {
 
         break;
       }
+      case OP_SUPER_INVOKE: {
+        ObjString* name{read_string()};
+        int arg_count{read_byte()};
+        ObjClass* superclass{as_class(pop())};
+
+        if (!invoke_from_class(superclass, name, arg_count)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        m_frame = &m_frames[m_frame_count - 1];
+        break;
+      }
 
       // binary
       case OP_EQUAL: {
