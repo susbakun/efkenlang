@@ -24,6 +24,22 @@ fun makeAdder(a) {
   return add;
 }
 print makeAdder(1)(2);   // 3
+
+class Animal {
+  init(name) { this.name = name; }
+  speak() { print this.name + " makes a sound"; }
+}
+
+class Dog < Animal {
+  speak() {
+    super.speak();
+    print this.name + " barks";
+  }
+}
+
+Dog("Rex").speak();
+// Rex makes a sound
+// Rex barks
 ```
 
 ## Features
@@ -37,7 +53,9 @@ print makeAdder(1)(2);   // 3
 - Functions, recursion, and native functions
 - Closures with open and closed upvalues
 - Mark-and-sweep garbage collector with a weak string-interning table
-- Classes, instances, methods, `this`, and initializers (through chapter 28)
+- Classes, instances, bound methods, `this`, and initializers
+- Single inheritance with `super`
+- NaN-boxed values: every `Value` fits in 64 bits (switchable at build time)
 
 **Additions of my own**
 
@@ -85,6 +103,7 @@ cmake --build build
 
 | Option            | Default | Effect                                                                           |
 | ----------------- | ------- | -------------------------------------------------------------------------------- |
+| `LOX_NAN_BOXING`  | `ON`    | Store values as 64-bit NaN-boxed words instead of a 16-byte tagged union         |
 | `LOX_TRACE`       | `OFF`   | Print the compiled bytecode and trace every instruction and the stack            |
 | `LOX_LOG_GC`      | `OFF`   | Log every GC allocation, mark, and free                                          |
 | `LOX_STRESS_GC`   | `OFF`   | Collect garbage on every allocation, which is good for shaking out missing roots |
@@ -105,7 +124,7 @@ cmake -S . -B build-gc -DLOX_STRESS_GC=ON -DLOX_ASAN=ON
 
 ## Tests
 
-The suite uses [GoogleTest](https://github.com/google/googletest). Each test runs a Lox program in a fresh VM, captures what it prints, and checks the output or the error status. It covers expressions, control flow, functions, closures, classes, methods, initializers, const rules, and garbage collection under load.
+The suite uses [GoogleTest](https://github.com/google/googletest). Each test runs a Lox program in a fresh VM, captures what it prints, and checks the output or the error status. It covers expressions, control flow, functions, closures, classes, methods, initializers, inheritance and `super`, const rules, and garbage collection under load.
 
 ```bash
 cmake -S . -B build-test
@@ -113,25 +132,24 @@ cmake --build build-test
 ctest --test-dir build-test --output-on-failure
 ```
 
-The tests compare printed output exactly, so build them with `LOX_TRACE` and `LOX_LOG_GC` turned **off**.
+The tests compare printed output exactly, so build them with `LOX_TRACE` and `LOX_LOG_GC` turned **off**. Both value representations should pass the same suite, so it's worth running it with `-DLOX_NAN_BOXING=ON` and `OFF`.
 
 ## Project layout
 
+All sources live in `src/`.
+
 | File                    | Role                                                                     |
 | ----------------------- | ------------------------------------------------------------------------ |
+| `main.cpp`              | Entry point: the REPL and the script runner                              |
 | `scanner.cpp`           | Turns source text into tokens                                            |
 | `compiler.cpp` / `.hpp` | Single-pass Pratt parser that emits bytecode                             |
 | `chunk.cpp` / `.hpp`    | Bytecode, constants, and line information                                |
-| `value.cpp` / `.hpp`    | The `Value` type                                                         |
+| `value.cpp` / `.hpp`    | The `Value` type (tagged union or NaN-boxed)                             |
 | `obj.cpp` / `.hpp`      | Heap objects: strings, functions, closures, upvalues, classes, instances |
 | `vm.cpp` / `.hpp`       | The interpreter loop, calls, natives, and the garbage collector          |
 | `debug.cpp`             | The disassembler                                                         |
-| `tests/`                | GoogleTest suite                                                         |
 
-## Roadmap
-
-- Inheritance and `super` (chapter 29)
-- Optimization (chapter 30)
+The GoogleTest suite is in `tests/`.
 
 ## Acknowledgements
 
