@@ -2,7 +2,7 @@
 
 A bytecode virtual machine and compiler for the **Lox** language, written in modern C++ (C++23).
 
-This project follows the second half of [_Crafting Interpreters_](https://craftinginterpreters.com) by **Robert Nystrom**, an amazing book, and free to read online. It walks you through building a complete language from scratch with so much clarity and humor that it's hard to put down. If you've ever wondered how a language actually runs, start there. The original C implementation (`clox`) lives in the author's [repository](https://github.com/munificent/craftinginterpreters). This version re-implements the VM in C++ using the standard library where the book hand-rolls its own data structures.
+This project follows the second half of [_Crafting Interpreters_](https://craftinginterpreters.com) by **Robert Nystrom**. The original C implementation (`clox`) lives in the author's [repository](https://github.com/munificent/craftinginterpreters). This version re-implements the VM in C++ using the standard library where the book hand-rolls its own data structures.
 
 ## Example
 
